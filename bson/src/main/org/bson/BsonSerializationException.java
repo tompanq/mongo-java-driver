@@ -32,4 +32,14 @@ public class BsonSerializationException extends BSONException {
     public BsonSerializationException(final String message) {
         super(message);
     }
+
+    /**
+     * Construct a new instance.
+     *
+     * @param message the message
+     * @param t the cause
+     */
+    public BsonSerializationException(final String message, final Throwable t) {
+        super(message, t);
+    }
 }

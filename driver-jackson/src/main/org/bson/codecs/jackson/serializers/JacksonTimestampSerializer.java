@@ -14,5 +14,22 @@
  * limitations under the License.
  */
 
-include 'util','bson', 'driver-core', 'driver', 'driver-async', 'mongo-java-driver', 'driver-jackson'
+package org.bson.codecs.jackson.serializers;
 
+import com.fasterxml.jackson.databind.SerializerProvider;
+import org.bson.BsonTimestamp;
+import org.bson.codecs.jackson.JacksonBsonGenerator;
+
+import java.io.IOException;
+
+/**
+ * Provides a BsonTimestamp serializer
+ */
+public class JacksonTimestampSerializer extends JacksonBsonSerializer<BsonTimestamp> {
+    @Override
+    public void serialize(final BsonTimestamp timestamp, final JacksonBsonGenerator bsonGenerator, final SerializerProvider provider)
+        throws IOException {
+
+        bsonGenerator.writeTimestamp(timestamp);
+    }
+}

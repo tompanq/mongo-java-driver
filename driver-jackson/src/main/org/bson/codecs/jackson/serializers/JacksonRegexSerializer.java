@@ -14,5 +14,22 @@
  * limitations under the License.
  */
 
-include 'util','bson', 'driver-core', 'driver', 'driver-async', 'mongo-java-driver', 'driver-jackson'
+package org.bson.codecs.jackson.serializers;
 
+import com.fasterxml.jackson.databind.SerializerProvider;
+import org.bson.codecs.jackson.JacksonBsonGenerator;
+
+import java.io.IOException;
+import java.util.regex.Pattern;
+
+/**
+ * Created by guo on 7/30/14.
+ */
+public class JacksonRegexSerializer extends JacksonBsonSerializer<Pattern> {
+
+    @Override
+    public void serialize(final Pattern value, final JacksonBsonGenerator generator, final SerializerProvider provider) throws IOException {
+
+        generator.writeRegex(value);
+    }
+}

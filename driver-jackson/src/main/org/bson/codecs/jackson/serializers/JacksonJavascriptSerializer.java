@@ -14,5 +14,22 @@
  * limitations under the License.
  */
 
-include 'util','bson', 'driver-core', 'driver', 'driver-async', 'mongo-java-driver', 'driver-jackson'
+package org.bson.codecs.jackson.serializers;
 
+import com.fasterxml.jackson.databind.SerializerProvider;
+import org.bson.BsonJavaScript;
+import org.bson.codecs.jackson.JacksonBsonGenerator;
+
+import java.io.IOException;
+
+/**
+ * Provides a BsonJavaScript serializer
+ */
+public class JacksonJavascriptSerializer extends JacksonBsonSerializer<BsonJavaScript> {
+
+    @Override
+    public void serialize(final BsonJavaScript bsonJavaScript, final JacksonBsonGenerator generator, final SerializerProvider provider)
+        throws IOException {
+        generator.writeJavascript(bsonJavaScript);
+    }
+}

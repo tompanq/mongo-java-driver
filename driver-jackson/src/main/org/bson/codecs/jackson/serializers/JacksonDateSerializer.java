@@ -14,5 +14,20 @@
  * limitations under the License.
  */
 
-include 'util','bson', 'driver-core', 'driver', 'driver-async', 'mongo-java-driver', 'driver-jackson'
+package org.bson.codecs.jackson.serializers;
 
+import com.fasterxml.jackson.databind.SerializerProvider;
+import org.bson.codecs.jackson.JacksonBsonGenerator;
+
+import java.io.IOException;
+import java.util.Date;
+
+/**
+ * Created by guo on 7/30/14.
+ */
+public class JacksonDateSerializer extends JacksonBsonSerializer<Date> {
+    @Override
+    public void serialize(final Date value, final JacksonBsonGenerator generator, final SerializerProvider provider) throws IOException {
+        generator.writeDate(value);
+    }
+}

@@ -14,5 +14,22 @@
  * limitations under the License.
  */
 
-include 'util','bson', 'driver-core', 'driver', 'driver-async', 'mongo-java-driver', 'driver-jackson'
+package org.bson.codecs.jackson.serializers;
 
+import com.fasterxml.jackson.databind.SerializerProvider;
+import org.bson.codecs.jackson.JacksonBsonGenerator;
+import org.bson.types.ObjectId;
+
+import java.io.IOException;
+
+/**
+ * Provides an ObjectId serializer
+ */
+public class JacksonObjectIdSerializer extends JacksonBsonSerializer<ObjectId> {
+    @Override
+    public void serialize(final ObjectId value, final JacksonBsonGenerator generator, final SerializerProvider provider)
+        throws IOException {
+
+        generator.writeObjectId(value);
+    }
+}
