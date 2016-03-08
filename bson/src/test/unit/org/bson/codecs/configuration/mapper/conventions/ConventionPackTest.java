@@ -16,15 +16,6 @@
 
 package org.bson.codecs.configuration.mapper.conventions;
 
-import com.fasterxml.classmate.TypeResolver;
-import com.fasterxml.jackson.databind.BeanProperty;
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.jsonFormatVisitors.JsonFormatVisitable;
-import com.fasterxml.jackson.databind.jsonFormatVisitors.JsonFormatVisitorWrapper;
-import com.fasterxml.jackson.databind.jsonFormatVisitors.JsonObjectFormatVisitor;
-import com.fasterxml.jackson.databind.jsonFormatVisitors.JsonObjectFormatVisitor.Base;
 import org.bson.BsonDocument;
 import org.bson.BsonDocumentReader;
 import org.bson.BsonDocumentWriter;
@@ -44,10 +35,6 @@ import org.bson.codecs.configuration.mapper.conventions.entities.ZipCode;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.List;
-
-@SuppressWarnings("CheckStyle")
 public class ConventionPackTest {
 
     @Test
@@ -129,7 +116,7 @@ public class ConventionPackTest {
     }
 
     @Test
-    public void testGenerics() throws JsonMappingException {
+    public void testGenerics() {
         final ClassModelCodecProvider codecProvider = ClassModelCodecProvider
             .builder()
             .register(BaseType.class)
@@ -138,8 +125,6 @@ public class ConventionPackTest {
             .register(Complex.class)
             .build();
         final CodecRegistry registry = CodecRegistries.fromProviders(codecProvider, new ValueCodecProvider());
-
-        final TypeResolver resolver = new TypeResolver();
 
         final ClassModelCodec<IntChild> intClassModel = ((ClassModelCodec<IntChild>) registry.get(IntChild.class));
         final ClassModelCodec<StringChild> stringClassModel = ((ClassModelCodec<StringChild>) registry.get(StringChild.class));
@@ -172,8 +157,8 @@ public class ConventionPackTest {
         Complex decode = complexClassModel.decode(new BsonDocumentReader(document), DecoderContext.builder().build());
         Assert.assertEquals(complex, decode);
 
-        Complex custom = new Complex(new IntChild(1234), new StringChild("Another round!"),
-                                     new BaseType<String>("Mongo just pawn in game of life"));
+        final Complex custom = new Complex(new IntChild(1234), new StringChild("Another round!"),
+                                           new BaseType<String>("Mongo just pawn in game of life"));
 
         document = new BsonDocument();
 
@@ -274,10 +259,10 @@ public class ConventionPackTest {
         private BaseType<String> baseType = new StringChild("so tricksy!");
         //        private Map<String, Double> map;
 
-        public Complex() {
+        Complex() {
         }
 
-        public Complex(final IntChild intChild, final StringChild stringChild,
+        Complex(final IntChild intChild, final StringChild stringChild,
                        final BaseType<String> baseType) {
             this.intChild = intChild;
             this.stringChild = stringChild;
@@ -288,18 +273,8 @@ public class ConventionPackTest {
             return baseType;
         }
 
-        public Complex setBaseType(final BaseType<String> baseType) {
-            this.baseType = baseType;
-            return this;
-        }
-
         public IntChild getIntChild() {
             return intChild;
-        }
-
-        public Complex setIntChild(final IntChild intChild) {
-            this.intChild = intChild;
-            return this;
         }
 
         public StringChild getStringChild() {
@@ -341,64 +316,4 @@ public class ConventionPackTest {
         }
     }
 
-    private static class BsonSchemaVisitor extends JsonFormatVisitorWrapper.Base {
-        private final ObjectMapper mapper;
-        private final List<MessageElementVisitor> elements = new ArrayList<MessageElementVisitor>();
-
-        public BsonSchemaVisitor(final ObjectMapper mapper) {
-            this.mapper = mapper;
-        }
-
-        public void accept(final Class<?> typeClass) throws JsonMappingException {
-            mapper.acceptJsonFormatVisitor(typeClass, this);
-        }
-
-        @Override
-        public JsonObjectFormatVisitor expectObjectFormat(final JavaType type) throws JsonMappingException {
-            final MessageElementVisitor visitor = new MessageElementVisitor(type);
-            add(visitor);
-            return visitor;
-        }
-
-        private void add(final MessageElementVisitor visitor) {
-            elements.add(visitor);
-        }
-    }
 }
-
-
-class MessageElementVisitor extends Base {
-    private final JavaType type;
-    //       private final Builder builder;
-
-    MessageElementVisitor(final JavaType type) {
-        this.type = type;
-        //           builder = new Builder();
-        //           builder.name(type.getRawClass().getSimpleName());
-        //        builder.documentation("Message for " + type.toCanonical());
-    }
-
-    @Override
-    public void property(final BeanProperty prop) throws JsonMappingException {
-        throw new UnsupportedOperationException("Not implemented yet!");
-    }
-
-    @Override
-    public void property(final String name, final JsonFormatVisitable handler, final JavaType propertyTypeHint)
-        throws JsonMappingException {
-        throw new UnsupportedOperationException("Not implemented yet!");
-    }
-
-    @Override
-    public void optionalProperty(final BeanProperty prop) throws JsonMappingException {
-        //        System.out.println("************ prop = " + prop);
-        //           builder.add(new MongoField(prop));
-    }
-
-    @Override
-    public void optionalProperty(final String name, final JsonFormatVisitable handler, final JavaType propertyTypeHint)
-        throws JsonMappingException {
-        throw new UnsupportedOperationException("Not implemented yet!");
-    }
-}
-

@@ -27,11 +27,9 @@ import org.bson.codecs.configuration.CodecRegistry;
 
 import java.lang.reflect.TypeVariable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.TreeMap;
 
 import static java.util.Arrays.asList;
@@ -48,7 +46,6 @@ public final class ClassModel extends MappedType {
     private final WeightedValue<String> collectionName;
     private final Map<String, List<MethodModel>> methods = new TreeMap<String, List<MethodModel>>();
     private boolean mapped;
-    private final  Map<String, Object> parameterizedTypes = new HashMap<String, Object>();
     private final List<TypeVariable<?>> typeParameters = new ArrayList<TypeVariable<?>>();
 
     /**
@@ -66,13 +63,12 @@ public final class ClassModel extends MappedType {
         memberResolver = new MemberResolver(resolver);
         try {
             aClass.getConstructor().setAccessible(true);
-        } catch (NoSuchMethodException e) {
+        } catch (final NoSuchMethodException e) {
             throw new ClassMappingException(e.getMessage(), e);
         }
     }
 
-    public ClassModel(final ClassModel classModel, final List<Class<?>> parameterTypes) {
-        //throw new UnsupportedOperationException("Not implemented yet!");
+    ClassModel(final ClassModel classModel, final List<Class<?>> parameterTypes) {
         super(classModel.getType());
         this.registry = classModel.registry;
         this.resolver = classModel.resolver;
@@ -85,9 +81,8 @@ public final class ClassModel extends MappedType {
         for (int i = 0; i < typeVariables.length; i++) {
             typeMap.put(typeVariables[i].getTypeName(), parameterTypes.get(i));
         }
-        for (Entry<String, FieldModel> entry : classModel.fields.entrySet()) {
-            FieldModel model = new FieldModel(entry.getValue(), typeMap);
-            fields.put(model.getName(), model);
+        for (final FieldModel entry : classModel.fields.values()) {
+            fields.put(entry.getName(), new FieldModel(entry, typeMap));
         }
     }
 
@@ -151,10 +146,6 @@ public final class ClassModel extends MappedType {
             }
             mapped = true;
         }
-    }
-
-    public Object resolveGenericType(final String typeName) {
-        return parameterizedTypes.get(typeName);
     }
 
     private void addField(final ResolvedField field) {

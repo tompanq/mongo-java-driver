@@ -16,10 +16,6 @@
 package org.bson.codecs.configuration.mapper;
 
 import com.fasterxml.classmate.TypeResolver;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import de.undercouch.bson4jackson.BsonFactory;
 import org.bson.codecs.Codec;
 import org.bson.codecs.configuration.CodecProvider;
 import org.bson.codecs.configuration.CodecRegistry;
@@ -39,7 +35,6 @@ public class ClassModelCodecProvider implements CodecProvider {
     private final Set<Class<?>> registered;
     private final Map<Class<?>, ClassModelCodec<?>> mapped = new HashMap<Class<?>, ClassModelCodec<?>>();
     private final ConventionPack conventionPack;
-    private ObjectMapper mapper;
 
     /**
      * Creates a provider for a given set of classes.
@@ -50,9 +45,6 @@ public class ClassModelCodecProvider implements CodecProvider {
     public ClassModelCodecProvider(final ConventionPack conventionPack, final Set<Class<?>> registered) {
         this.conventionPack = conventionPack;
         this.registered = registered;
-        mapper = new ObjectMapper(new BsonFactory());
-        mapper.setSerializationInclusion(Include.NON_NULL);
-        mapper.setAnnotationIntrospector(new MongoAnnotationIntrospector(conventionPack));
     }
 
     /**
@@ -72,18 +64,9 @@ public class ClassModelCodecProvider implements CodecProvider {
         if (registered.contains(clazz)) {
             codec = mapped.get(clazz);
             if (codec == null && conventionPack.isMappable(clazz)) {
-/*
-                final BsonSchemaVisitor visitor = new BsonSchemaVisitor(mapper);
-                try {
-                    mapper.acceptJsonFormatVisitor(clazz, visitor);
-                } catch (JsonMappingException e) {
-                    throw new RuntimeException(e.getMessage(), e);
-                }
-*/
-
                 final ClassModel model = new ClassModel(registry, resolver, clazz);
                 conventionPack.apply(model);
-                codec = new ClassModelCodec(registry, mapper, model);
+                codec = new ClassModelCodec(model);
                 mapped.put(clazz, codec);
             }
         }
@@ -129,74 +112,4 @@ public class ClassModelCodecProvider implements CodecProvider {
             return this;
         }
     }
-/*
-
-    @SuppressWarnings("CheckStyle")
-    class BsonSchemaVisitor extends Base {
-        private final ObjectMapper mapper;
-        private final List<MessageElementVisitor> elements = new ArrayList<MessageElementVisitor>();
-
-        public BsonSchemaVisitor(final ObjectMapper mapper) {
-            this.mapper = mapper;
-        }
-
-*/
-/*
-    public void accept(final Class<?> typeClass) throws JsonMappingException {
-        mapper.acceptJsonFormatVisitor(typeClass, this);
-    }
-*//*
-
-
-        @Override
-        public JsonObjectFormatVisitor expectObjectFormat(final JavaType type) throws JsonMappingException {
-            final MessageElementVisitor visitor = new MessageElementVisitor(type);
-            add(visitor);
-            return visitor;
-        }
-
-        private void add(final MessageElementVisitor visitor) {
-            elements.add(visitor);
-        }
-
-    }
-
-
-    class MessageElementVisitor extends JsonObjectFormatVisitor.Base {
-        private final JavaType type;
-        private final ClassModel classModel;
-        //    private final Builder builder;
-
-        MessageElementVisitor(final JavaType type) {
-            this.type = type;
-            classModel = new ClassModel(type);
-            //        builder = new Builder();
-            //        builder.name(type.getRawClass().getSimpleName());
-            //        builder.documentation("Message for " + type.toCanonical());
-        }
-
-        @Override
-        public void property(final BeanProperty prop) throws JsonMappingException {
-            throw new UnsupportedOperationException("Not implemented yet!");
-        }
-
-        @Override
-        public void property(final String name, final JsonFormatVisitable handler, final JavaType propertyTypeHint)
-            throws JsonMappingException {
-            throw new UnsupportedOperationException("Not implemented yet!");
-        }
-
-        @Override
-        public void optionalProperty(final BeanProperty prop) throws JsonMappingException {
-            classModel.addField(new FieldModel(classModel, prop));
-        }
-
-        @Override
-        public void optionalProperty(final String name, final JsonFormatVisitable handler, final JavaType propertyTypeHint)
-            throws JsonMappingException {
-            throw new UnsupportedOperationException("Not implemented yet!");
-        }
-    }
-*/
-
 }

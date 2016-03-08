@@ -15,18 +15,13 @@
  */
 package org.bson.codecs.configuration.mapper;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.bson.BsonReader;
 import org.bson.BsonType;
 import org.bson.BsonWriter;
-import org.bson.RawBsonDocument;
 import org.bson.codecs.Codec;
 import org.bson.codecs.DecoderContext;
 import org.bson.codecs.EncoderContext;
-import org.bson.codecs.configuration.CodecRegistry;
 
-import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.util.List;
 
@@ -43,14 +38,13 @@ public class ClassModelCodec<T extends Object> implements Codec<T> {
     /**
      * Creates a Codec for the ClassModel
      *
-     * @param mapper
      * @param model the model to use
      */
-    public ClassModelCodec(final CodecRegistry codecRegistry, final ObjectMapper mapper, final ClassModel model) {
+    public ClassModelCodec(final ClassModel model) {
         this.classModel = model;
     }
 
-    public ClassModelCodec(final ClassModelCodec<T> codec, final List<Class<?>> parameterTypes) {
+    ClassModelCodec(final ClassModelCodec<T> codec, final List<Class<?>> parameterTypes) {
         this.classModel = new ClassModel(codec.getClassModel(), parameterTypes);
     }
 
@@ -83,6 +77,9 @@ public class ClassModelCodec<T extends Object> implements Codec<T> {
         writer.writeEndDocument();
     }
 
+    /**
+     * @return the ClassModel for this codec
+     */
     public ClassModel getClassModel() {
         return classModel;
     }
