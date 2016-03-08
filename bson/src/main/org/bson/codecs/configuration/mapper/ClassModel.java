@@ -25,22 +25,31 @@ import com.fasterxml.classmate.members.ResolvedField;
 import com.fasterxml.classmate.members.ResolvedMethod;
 import org.bson.codecs.configuration.CodecRegistry;
 
+import java.lang.reflect.TypeVariable;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.TreeMap;
+
+import static java.util.Arrays.asList;
 
 /**
  * This class represents the various generics and field metadata of a class for use in mapping data to and from the database.
  */
+@SuppressWarnings("Since15")
 public final class ClassModel extends MappedType {
     private final Map<String, FieldModel> fields = new TreeMap<String, FieldModel>();
     private final CodecRegistry registry;
     private final TypeResolver resolver;
     private final MemberResolver memberResolver;
-    private final WeightedValue<String> collectionName = new WeightedValue<String>();
+    private final WeightedValue<String> collectionName;
     private final Map<String, List<MethodModel>> methods = new TreeMap<String, List<MethodModel>>();
     private boolean mapped;
+    private final  Map<String, Object> parameterizedTypes = new HashMap<String, Object>();
+    private final List<TypeVariable<?>> typeParameters = new ArrayList<TypeVariable<?>>();
 
     /**
      * Construct a ClassModel for the given Classs.
@@ -49,15 +58,36 @@ public final class ClassModel extends MappedType {
      * @param resolver the TypeResolver used in discovery of Class metatadata
      * @param aClass   the Class to model
      */
-    ClassModel(final CodecRegistry registry, final TypeResolver resolver, final Class<?> aClass) {
+    public ClassModel(final CodecRegistry registry, final TypeResolver resolver, final Class<?> aClass) {
         super(aClass);
         this.registry = registry;
         this.resolver = resolver;
+        collectionName = new WeightedValue<String>();
         memberResolver = new MemberResolver(resolver);
         try {
             aClass.getConstructor().setAccessible(true);
         } catch (NoSuchMethodException e) {
             throw new ClassMappingException(e.getMessage(), e);
+        }
+    }
+
+    public ClassModel(final ClassModel classModel, final List<Class<?>> parameterTypes) {
+        //throw new UnsupportedOperationException("Not implemented yet!");
+        super(classModel.getType());
+        this.registry = classModel.registry;
+        this.resolver = classModel.resolver;
+        this.memberResolver = classModel.memberResolver;
+        this.collectionName = classModel.collectionName;
+        classModel.map();
+
+        final TypeVariable<Class<Object>>[] typeVariables = classModel.getType().getTypeParameters();
+        final Map<String, Class<?>> typeMap = new HashMap<String, Class<?>>();
+        for (int i = 0; i < typeVariables.length; i++) {
+            typeMap.put(typeVariables[i].getTypeName(), parameterTypes.get(i));
+        }
+        for (Entry<String, FieldModel> entry : classModel.fields.entrySet()) {
+            FieldModel model = new FieldModel(entry.getValue(), typeMap);
+            fields.put(model.getName(), model);
         }
     }
 
@@ -95,7 +125,7 @@ public final class ClassModel extends MappedType {
      * @return the name
      */
     public String getName() {
-        return getType().getName();
+        return getType().getSimpleName();
     }
 
     /**
@@ -106,8 +136,9 @@ public final class ClassModel extends MappedType {
             final ResolvedType resolved = resolver.resolve(getType());
             final ResolvedTypeWithMembers type =
                 memberResolver.resolve(resolved, new StdConfiguration(AnnotationInclusion.INCLUDE_AND_INHERIT_IF_INHERITED), null);
-
-            for (final ResolvedType resolvedType : resolved.getTypeParameters()) {
+            typeParameters.addAll(asList(resolved.getErasedType().getTypeParameters()));
+            final List<ResolvedType> typeParameters1 = resolved.getTypeParameters();
+            for (final ResolvedType resolvedType : typeParameters1) {
                 addParameter(resolvedType.getErasedType());
             }
 
@@ -120,6 +151,10 @@ public final class ClassModel extends MappedType {
             }
             mapped = true;
         }
+    }
+
+    public Object resolveGenericType(final String typeName) {
+        return parameterizedTypes.get(typeName);
     }
 
     private void addField(final ResolvedField field) {

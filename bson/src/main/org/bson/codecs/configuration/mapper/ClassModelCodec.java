@@ -15,12 +15,20 @@
  */
 package org.bson.codecs.configuration.mapper;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.bson.BsonReader;
 import org.bson.BsonType;
 import org.bson.BsonWriter;
+import org.bson.RawBsonDocument;
 import org.bson.codecs.Codec;
 import org.bson.codecs.DecoderContext;
 import org.bson.codecs.EncoderContext;
+import org.bson.codecs.configuration.CodecRegistry;
+
+import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.util.List;
 
 /**
  * Provides the encoding and decoding logic for a ClassModel
@@ -31,19 +39,27 @@ import org.bson.codecs.EncoderContext;
 public class ClassModelCodec<T extends Object> implements Codec<T> {
     private final ClassModel classModel;
 
+
     /**
      * Creates a Codec for the ClassModel
      *
+     * @param mapper
      * @param model the model to use
      */
-    public ClassModelCodec(final ClassModel model) {
+    public ClassModelCodec(final CodecRegistry codecRegistry, final ObjectMapper mapper, final ClassModel model) {
         this.classModel = model;
+    }
+
+    public ClassModelCodec(final ClassModelCodec<T> codec, final List<Class<?>> parameterTypes) {
+        this.classModel = new ClassModel(codec.getClassModel(), parameterTypes);
     }
 
     @Override
     public T decode(final BsonReader reader, final DecoderContext decoderContext) {
         try {
-            final T entity = (T) classModel.getType().newInstance();
+            final Constructor<Object> ctor = classModel.getType().getConstructor();
+            ctor.setAccessible(true);
+            final T entity = (T) ctor.newInstance();
             reader.readStartDocument();
             while (reader.readBsonType() != BsonType.END_OF_DOCUMENT) {
                 final String name = reader.readName();
@@ -67,8 +83,17 @@ public class ClassModelCodec<T extends Object> implements Codec<T> {
         writer.writeEndDocument();
     }
 
+    public ClassModel getClassModel() {
+        return classModel;
+    }
+
     @Override
     public Class<T> getEncoderClass() {
         return (Class<T>) classModel.getType();
+    }
+
+    @Override
+    public String toString() {
+        return String.format("ClassModelCodec<%s>", classModel.getName());
     }
 }

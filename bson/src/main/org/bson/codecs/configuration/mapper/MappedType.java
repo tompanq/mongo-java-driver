@@ -56,6 +56,10 @@ public abstract class MappedType {
         parameterTypes.add(parameter);
     }
 
+    public List<Class<?>> getParameterTypes() {
+        return parameterTypes;
+    }
+
     /**
      * The owning type of this MappedType
      *

@@ -22,6 +22,7 @@ import org.bson.BsonWriter;
 import org.bson.codecs.Codec;
 import org.bson.codecs.DecoderContext;
 import org.bson.codecs.EncoderContext;
+import org.bson.codecs.configuration.CodecConfigurationException;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.codecs.configuration.mapper.conventions.Converter;
 
@@ -31,22 +32,26 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import static java.lang.String.format;
+
 /**
  * Represents a field on a class and stores various metadata such as generic parameters for use by the {@link ClassModelCodec}
  */
-@SuppressWarnings("unchecked")
+@SuppressWarnings({"unchecked", "Since15"})
 public final class FieldModel extends MappedType {
     private final Field rawField;
 
     private final WeightedValue<String> name;
-    private final WeightedValue<Boolean> included = new WeightedValue<Boolean>(true);
-    private final WeightedValue<Boolean> storeNulls = new WeightedValue<Boolean>(true);
-    private final WeightedValue<Boolean> storeEmpties = new WeightedValue<Boolean>(true);
+    private final WeightedValue<Boolean> included;
+    private final WeightedValue<Boolean> storeNulls;
+    private final WeightedValue<Boolean> storeEmpties;
     private final ClassModel owner;
     private final CodecRegistry registry;
     private final ResolvedField field;
     private Codec<?> codec;
     private Converter<?, ?> converter = new IdentityConverter();
+    private final String typeName;
+    private List<ResolvedType> typeParameters;
 
     /**
      * Create the FieldModel
@@ -55,6 +60,7 @@ public final class FieldModel extends MappedType {
      * @param registry   the TypeRegistry used to cache type information
      * @param field      the field to model
      */
+    @SuppressWarnings("Since15")
     public FieldModel(final ClassModel classModel, final CodecRegistry registry, final ResolvedField field) {
         super(field.getType().getErasedType());
         owner = classModel;
@@ -63,27 +69,34 @@ public final class FieldModel extends MappedType {
         rawField = field.getRawMember();
         rawField.setAccessible(true);
         name = new WeightedValue<String>(field.getName());
+        included = new WeightedValue<Boolean>(true);
+        storeNulls = new WeightedValue<Boolean>(true);
+        storeEmpties = new WeightedValue<Boolean>(true);
+
+        typeParameters = field.getType().getTypeParameters();
 
         final List<ResolvedType> typeParameters = field.getType().getTypeParameters();
         for (final ResolvedType parameter : typeParameters) {
             addParameter(parameter.getErasedType());
         }
+        if (rawField.getType().equals(Object.class)) {
+            typeName = rawField.getGenericType().getTypeName();
+        } else {
+            typeName = null;
+        }
     }
 
-    /**
-     * Creates a FieldModel based on an existing FieldModel
-     *
-     * @param type       the type of this new FieldModel.  e.g., when encrypting this might be a byte[] rather than the original field's
-     *                   String type
-     * @param fieldModel the model to duplicate
-     */
-    public FieldModel(final Class<?> type, final FieldModel fieldModel) {
-        super(type);
-        this.registry = fieldModel.registry;
-        this.name = fieldModel.name;
-        this.owner = fieldModel.owner;
-        this.field = fieldModel.field;
-        this.rawField = null;
+    public FieldModel(final FieldModel model, final Map<String, Class<?>> typeMap) {
+        super(typeMap.getOrDefault(model.typeName, model.getType()));
+        rawField = model.rawField;
+        name = model.name;
+        included = model.included;
+        storeNulls = model.storeNulls;
+        storeEmpties = model.storeEmpties;
+        owner = model.owner;
+        registry = model.registry;
+        field = model.field;
+        typeName = model.typeName;
     }
 
     /**
@@ -107,7 +120,14 @@ public final class FieldModel extends MappedType {
      */
     Codec<?> getCodec() {
         if (codec == null) {
-            codec = registry.get(getConverter().getType());
+            try {
+                codec = registry.get(getConverter().getType());
+                if(!getParameterTypes().isEmpty() && codec instanceof ClassModelCodec) {
+                    codec = new ClassModelCodec((ClassModelCodec) codec, getParameterTypes());
+                }
+            } catch (CodecConfigurationException e) {
+                throw new CodecConfigurationException(format("Can not find codec for the field '%s' of type '%s'", name, getType()), e);
+            }
         }
         return codec;
     }
@@ -285,7 +305,7 @@ public final class FieldModel extends MappedType {
 
     @Override
     public String toString() {
-        return String.format("%s#%s", owner.getName(), field.getName());
+        return format("%s#%s:%s", owner.getName(), field.getName(), getType());
     }
 
     private class IdentityConverter implements Converter<Object, Object> {
@@ -295,8 +315,8 @@ public final class FieldModel extends MappedType {
         }
 
         @Override
-        public Class<Object> getType() {
-            return (Class<Object>) getRawField().getType();
+        public Class<?> getType() {
+            return FieldModel.this.getType();
         }
 
         @Override

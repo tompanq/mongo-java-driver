@@ -16,6 +16,7 @@
 
 package org.bson.codecs.configuration.mapper.conventions;
 
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import org.bson.codecs.configuration.mapper.ClassModel;
 
 import java.util.ArrayList;
@@ -38,27 +39,21 @@ public abstract class ConventionPack {
     private final List<String> phases = new ArrayList<String>(Arrays.asList(ConventionPack.CLASS_MAPPING,
                                                                             ConventionPack.FIELD_MAPPING,
                                                                             ConventionPack.VALIDATION));
+    private final NamingStrategy namingStrategy;
 
     /**
      * Creates an empty ConventionPack
      */
     public ConventionPack() {
+        namingStrategy = NamingStrategy.LOWER_CAMEL_CASE;
     }
 
-    /**
-     * Creates a new ConventionPack using an existing pack as the starting point.
-     *
-     * @param pack the pack to base
-     */
-    public ConventionPack(final ConventionPack pack) {
-        conventions.putAll(pack.getConventions());
+    public ConventionPack(final NamingStrategy namingStrategy) {
+        this.namingStrategy = namingStrategy;
     }
 
-    /**
-     * @return the map of phases and Conventions
-     */
-    public Map<String, List<Convention>> getConventions() {
-        return conventions;
+    public NamingStrategy getNamingStrategy() {
+        return namingStrategy;
     }
 
     /**
@@ -90,12 +85,10 @@ public abstract class ConventionPack {
     }
 
     /**
-     * Lists the phases this ConventionPack uses to process Conventions
-     *
-     * @return the phases of this ConventionPack
+     * @return the map of phases and Conventions
      */
-    public List<String> getPhases() {
-        return phases;
+    public Map<String, List<Convention>> getConventions() {
+        return conventions;
     }
 
     /**
@@ -111,10 +104,49 @@ public abstract class ConventionPack {
     }
 
     /**
+     * Lists the phases this ConventionPack uses to process Conventions
+     *
+     * @return the phases of this ConventionPack
+     */
+    public List<String> getPhases() {
+        return phases;
+    }
+
+    /**
      * Determines if the class is mappable according to this ConventionPack
      *
      * @param clazz the class process
      * @return true if the pack can map this class
      */
     public abstract boolean isMappable(final Class<?> clazz);
+
+
+    public enum NamingStrategy {
+        SNAKE_CASE {
+            @Override
+            public Object strategy() {
+                return PropertyNamingStrategy.SNAKE_CASE;
+            }
+        },
+        UPPER_CAMEL_CASE {
+            @Override
+            public Object strategy() {
+                return PropertyNamingStrategy.UPPER_CAMEL_CASE;
+            }
+        },
+        LOWER_CAMEL_CASE {
+            @Override
+            public Object strategy() {
+                return PropertyNamingStrategy.LOWER_CAMEL_CASE;
+            }
+        },
+        LOWER_CASE {
+            @Override
+            public Object strategy() {
+                return PropertyNamingStrategy.LOWER_CASE;
+            }
+        };
+
+        public abstract Object strategy();
+    }
 }

@@ -34,7 +34,7 @@ public interface Converter<F, T> {
     /**
      * @return The Class representing the type T
      */
-    Class<T> getType();
+    Class<?> getType();
 
     /**
      * Converts a value of type T back to one of type F

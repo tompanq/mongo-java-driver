@@ -154,7 +154,8 @@ class AggregateIterableImpl<TDocument, TResult> implements AggregateIterable<TRe
     private List<BsonDocument> createBsonDocumentList(final List<? extends Bson> pipeline) {
         List<BsonDocument> aggregateList = new ArrayList<BsonDocument>(pipeline.size());
         for (Bson obj : pipeline) {
-            aggregateList.add(obj.toBsonDocument(documentClass, codecRegistry));
+            final BsonDocument document = obj.toBsonDocument(documentClass, codecRegistry);
+            aggregateList.add(document);
         }
         return aggregateList;
     }
