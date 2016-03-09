@@ -25,6 +25,7 @@ import com.fasterxml.classmate.members.ResolvedField;
 import com.fasterxml.classmate.members.ResolvedMethod;
 import org.bson.codecs.configuration.CodecRegistry;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.TypeVariable;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -62,7 +63,8 @@ public final class ClassModel extends MappedType {
         collectionName = new WeightedValue<String>();
         memberResolver = new MemberResolver(resolver);
         try {
-            aClass.getConstructor().setAccessible(true);
+            final Constructor<?> constructor = aClass.getConstructor();
+            constructor.setAccessible(true);
         } catch (final NoSuchMethodException e) {
             throw new ClassMappingException(e.getMessage(), e);
         }

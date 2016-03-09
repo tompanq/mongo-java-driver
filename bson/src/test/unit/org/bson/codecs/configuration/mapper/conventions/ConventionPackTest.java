@@ -193,7 +193,7 @@ public class ConventionPackTest {
     }
 
     @SuppressWarnings("CheckStyle")
-    private static class BaseType<T> {
+    public static class BaseType<T> {
         private T t;
 
         public BaseType() {
@@ -234,7 +234,7 @@ public class ConventionPackTest {
     }
 
     @SuppressWarnings("CheckStyle")
-    private static class IntChild extends BaseType<Integer> {
+    public static class IntChild extends BaseType<Integer> {
         public IntChild() {
         }
 
@@ -244,7 +244,7 @@ public class ConventionPackTest {
     }
 
     @SuppressWarnings("CheckStyle")
-    private static class StringChild extends BaseType<String> {
+    public static class StringChild extends BaseType<String> {
         public StringChild() {
         }
 
@@ -253,13 +253,13 @@ public class ConventionPackTest {
         }
     }
 
-    private static class Complex {
+    public static class Complex {
         private IntChild intChild = new IntChild(100);
         private StringChild stringChild = new StringChild("what what?");
         private BaseType<String> baseType = new StringChild("so tricksy!");
         //        private Map<String, Double> map;
 
-        Complex() {
+        public Complex() {
         }
 
         Complex(final IntChild intChild, final StringChild stringChild,
@@ -275,6 +275,14 @@ public class ConventionPackTest {
 
         public IntChild getIntChild() {
             return intChild;
+        }
+
+        public void setBaseType(final BaseType<String> baseType) {
+            this.baseType = baseType;
+        }
+
+        public void setIntChild(final IntChild intChild) {
+            this.intChild = intChild;
         }
 
         public StringChild getStringChild() {
