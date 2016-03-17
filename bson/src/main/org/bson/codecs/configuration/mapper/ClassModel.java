@@ -38,7 +38,7 @@ import static java.util.Arrays.asList;
 /**
  * This class represents the various generics and field metadata of a class for use in mapping data to and from the database.
  */
-@SuppressWarnings("Since15")
+@SuppressWarnings({"Since15", "CheckStyle"})
 public final class ClassModel extends MappedType {
     private final Map<String, FieldModel> fields = new TreeMap<String, FieldModel>();
     private final CodecRegistry registry;
@@ -48,6 +48,7 @@ public final class ClassModel extends MappedType {
     private final Map<String, List<MethodModel>> methods = new TreeMap<String, List<MethodModel>>();
     private boolean mapped;
     private final List<TypeVariable<?>> typeParameters = new ArrayList<TypeVariable<?>>();
+    private ClassModelCodecProvider provider;
 
     /**
      * Construct a ClassModel for the given Classs.
@@ -56,8 +57,10 @@ public final class ClassModel extends MappedType {
      * @param resolver the TypeResolver used in discovery of Class metatadata
      * @param aClass   the Class to model
      */
-    public ClassModel(final CodecRegistry registry, final TypeResolver resolver, final Class<?> aClass) {
+    public ClassModel(final ClassModelCodecProvider provider, final CodecRegistry registry, final TypeResolver resolver,
+                      final Class<?> aClass) {
         super(aClass);
+        this.provider = provider;
         this.registry = registry;
         this.resolver = resolver;
         collectionName = new WeightedValue<String>();
@@ -151,7 +154,7 @@ public final class ClassModel extends MappedType {
     }
 
     private void addField(final ResolvedField field) {
-        addField(new FieldModel(this, registry, field));
+        addField(new FieldModel(this, provider, registry, field));
     }
 
     private void addMethod(final ResolvedMethod method) {

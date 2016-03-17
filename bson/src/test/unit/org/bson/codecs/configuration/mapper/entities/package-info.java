@@ -14,15 +14,7 @@
  * limitations under the License.
  */
 
-package org.bson.codecs.configuration.mapper.conventions;
-
-import org.bson.codecs.configuration.mapper.entities.BytesConvention;
-import org.bson.codecs.configuration.mapper.entities.Rot13Convention;
-
-class TransformingConventionPack extends DefaultConventionPack {
-    public TransformingConventionPack() {
-        addConvention(new Rot13Convention());
-        addConvention(new BytesConvention());
-    }
-
-}
+/**
+ * Test entities and related classes for the conventions tests
+ */
+package org.bson.codecs.configuration.mapper.entities;

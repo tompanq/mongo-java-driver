@@ -64,9 +64,10 @@ public class ClassModelCodecProvider implements CodecProvider {
         if (registered.contains(clazz)) {
             codec = mapped.get(clazz);
             if (codec == null && conventionPack.isMappable(clazz)) {
-                final ClassModel model = new ClassModel(registry, resolver, clazz);
+                final ClassModel model = new ClassModel(this, registry, resolver, clazz);
                 conventionPack.apply(model);
-                codec = new ClassModelCodec(model);
+                model.map();
+                codec = new ClassModelCodec(model, this, registry);
                 mapped.put(clazz, codec);
             }
         }

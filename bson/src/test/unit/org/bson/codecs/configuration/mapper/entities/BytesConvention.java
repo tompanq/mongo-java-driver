@@ -14,19 +14,38 @@
  * limitations under the License.
  */
 
-package org.bson.codecs.configuration.mapper.conventions.entities;
+package org.bson.codecs.configuration.mapper.entities;
 
 import org.bson.codecs.configuration.mapper.ClassModel;
 import org.bson.codecs.configuration.mapper.FieldModel;
 import org.bson.codecs.configuration.mapper.conventions.Convention;
 import org.bson.codecs.configuration.mapper.conventions.ConventionPack;
+import org.bson.codecs.configuration.mapper.conventions.Converter;
 
-public class Rot13Convention implements Convention {
+import java.util.UUID;
+
+public class BytesConvention implements Convention {
     @Override
     public void apply(final ClassModel classModel) {
         for (final FieldModel fieldModel : classModel.getFields()) {
-            if (fieldModel.hasAnnotation(Secure.class)) {
-                fieldModel.setConverter(new Rot13Converter());
+            if (fieldModel.hasAnnotation(Bytes.class)) {
+                fieldModel.setConverter(new Converter<UUID, byte[]>() {
+
+                    @Override
+                    public byte[] apply(final UUID value) {
+                        return value.toString().getBytes();
+                    }
+
+                    @Override
+                    public Class<byte[]> getType() {
+                        return byte[].class;
+                    }
+
+                    @Override
+                    public UUID unapply(final byte[] value) {
+                        return UUID.fromString(new String(value));
+                    }
+                });
             }
         }
     }

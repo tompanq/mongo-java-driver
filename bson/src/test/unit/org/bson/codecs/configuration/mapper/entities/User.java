@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.bson.codecs.configuration.mapper.conventions.entities;
+package org.bson.codecs.configuration.mapper.entities;
 
 import java.util.Map;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015 MongoDB, Inc.
+ * Copyright (c) 2008-2016 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,15 +14,14 @@
  * limitations under the License.
  */
 
-package org.bson.codecs.configuration.mapper.conventions;
+package org.bson.codecs.configuration.mapper.entities;
 
-import org.bson.codecs.configuration.mapper.entities.BytesConvention;
-import org.bson.codecs.configuration.mapper.entities.Rot13Convention;
-
-class TransformingConventionPack extends DefaultConventionPack {
-    public TransformingConventionPack() {
-        addConvention(new Rot13Convention());
-        addConvention(new BytesConvention());
+@SuppressWarnings("CheckStyle")
+public class IntChild extends BaseGenericType<Integer> {
+    public IntChild() {
     }
 
+    public IntChild(final Integer integer) {
+        super(integer);
+    }
 }

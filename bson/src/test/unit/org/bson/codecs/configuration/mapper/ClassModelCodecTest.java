@@ -30,7 +30,7 @@ import org.bson.codecs.ValueCodecProvider;
 import org.bson.codecs.configuration.CodecConfigurationException;
 import org.bson.codecs.configuration.CodecRegistries;
 import org.bson.codecs.configuration.CodecRegistry;
-import org.bson.codecs.configuration.mapper.conventions.entities.Entity;
+import org.bson.codecs.configuration.mapper.entities.Entity;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -38,17 +38,11 @@ import java.awt.Color;
 
 import static org.junit.Assert.assertEquals;
 
+@SuppressWarnings("CheckStyle")
 public class ClassModelCodecTest {
 
     private CodecRegistry registry;
     private ClassModelCodecProvider codecProvider;
-
-    @Test
-    public void resolveEntityTypes() {
-        final ClassModel model = new ClassModel(getCodecRegistry(), new TypeResolver(), Entity.class);
-        model.map();
-        assertEquals("Should find 4 fields", 4, model.getFields().size());
-    }
 
     private CodecRegistry getCodecRegistry() {
         if (registry == null) {

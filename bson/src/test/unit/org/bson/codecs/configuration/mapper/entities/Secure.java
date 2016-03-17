@@ -14,7 +14,18 @@
  * limitations under the License.
  */
 
-/**
- * Test entities and related classes for the conventions tests
- */
-package org.bson.codecs.configuration.mapper.conventions.entities;
+package org.bson.codecs.configuration.mapper.entities;
+
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+@Documented
+@Inherited
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.FIELD})
+@interface Secure {
+}

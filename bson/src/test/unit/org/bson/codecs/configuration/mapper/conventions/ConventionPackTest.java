@@ -27,11 +27,16 @@ import org.bson.codecs.configuration.CodecRegistries;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.codecs.configuration.mapper.ClassModelCodec;
 import org.bson.codecs.configuration.mapper.ClassModelCodecProvider;
-import org.bson.codecs.configuration.mapper.conventions.entities.Address;
-import org.bson.codecs.configuration.mapper.conventions.entities.Entity;
-import org.bson.codecs.configuration.mapper.conventions.entities.Person;
-import org.bson.codecs.configuration.mapper.conventions.entities.SecureEntity;
-import org.bson.codecs.configuration.mapper.conventions.entities.ZipCode;
+import org.bson.codecs.configuration.mapper.entities.Address;
+import org.bson.codecs.configuration.mapper.entities.BaseGenericType;
+import org.bson.codecs.configuration.mapper.entities.Complex;
+import org.bson.codecs.configuration.mapper.entities.Entity;
+import org.bson.codecs.configuration.mapper.entities.IntChild;
+import org.bson.codecs.configuration.mapper.entities.NamedStringChild;
+import org.bson.codecs.configuration.mapper.entities.Person;
+import org.bson.codecs.configuration.mapper.entities.SecureEntity;
+import org.bson.codecs.configuration.mapper.entities.StringChild;
+import org.bson.codecs.configuration.mapper.entities.ZipCode;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -119,7 +124,7 @@ public class ConventionPackTest {
     public void testGenerics() {
         final ClassModelCodecProvider codecProvider = ClassModelCodecProvider
             .builder()
-            .register(BaseType.class)
+            .register(BaseGenericType.class)
             .register(IntChild.class)
             .register(StringChild.class)
             .register(Complex.class)
@@ -158,7 +163,7 @@ public class ConventionPackTest {
         Assert.assertEquals(complex, decode);
 
         final Complex custom = new Complex(new IntChild(1234), new StringChild("Another round!"),
-                                           new BaseType<String>("Mongo just pawn in game of life"));
+                                           new BaseGenericType<String>("Mongo just pawn in game of life"));
 
         document = new BsonDocument();
 
@@ -170,6 +175,29 @@ public class ConventionPackTest {
         Assert.assertEquals("Another round!", custom.getStringChild().getT());
         Assert.assertEquals("Mongo just pawn in game of life", custom.getBaseType().getT());
     }
+
+    @Test
+    public void testPolymorphism() {
+        final ClassModelCodecProvider codecProvider = ClassModelCodecProvider
+            .builder()
+            .register(BaseGenericType.class)
+            .register(IntChild.class)
+            .register(StringChild.class)
+            .register(NamedStringChild.class)
+            .register(Complex.class)
+            .build();
+        final CodecRegistry registry = CodecRegistries.fromProviders(codecProvider, new ValueCodecProvider());
+
+        BsonDocument document = new BsonDocument();
+        final StringChild bruce = new NamedStringChild("string child", "Bruce");
+        final Complex complex = new Complex(new IntChild(1), new StringChild("Kung Pow"), bruce);
+        registry.get(Complex.class).encode(new BsonDocumentWriter(document), complex, EncoderContext.builder().build());
+        final Complex decoded = registry.get(Complex.class).decode(new BsonDocumentReader(document), DecoderContext.builder().build());
+
+        Assert.assertTrue("The baseType field should be a NamedStringChild", decoded.getBaseType() instanceof NamedStringChild);
+        Assert.assertEquals(complex, decoded);
+    }
+
 
     @Test
     public void testTransformingConventions() {
@@ -190,138 +218,6 @@ public class ConventionPackTest {
         Assert.assertEquals(document.getString("password").getValue(), "zl ibvpr vf zl cnffcbeg");
 
         Assert.assertEquals(entity, codec.decode(new BsonDocumentReader(document), DecoderContext.builder().build()));
-    }
-
-    @SuppressWarnings("CheckStyle")
-    public static class BaseType<T> {
-        private T t;
-
-        public BaseType() {
-        }
-
-        public BaseType(final T t) {
-            this.t = t;
-        }
-
-        public T getT() {
-            return t;
-        }
-
-        public void setT(final T t) {
-            this.t = t;
-        }
-
-        @Override
-        public int hashCode() {
-            return t != null ? t.hashCode() : 0;
-        }
-
-        @Override
-        public boolean equals(final Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (!(o instanceof BaseType)) {
-                return false;
-            }
-
-            final BaseType<?> baseType = (BaseType<?>) o;
-
-            return t != null ? t.equals(baseType.t) : baseType.t == null;
-
-        }
-
-    }
-
-    @SuppressWarnings("CheckStyle")
-    public static class IntChild extends BaseType<Integer> {
-        public IntChild() {
-        }
-
-        public IntChild(final Integer integer) {
-            super(integer);
-        }
-    }
-
-    @SuppressWarnings("CheckStyle")
-    public static class StringChild extends BaseType<String> {
-        public StringChild() {
-        }
-
-        public StringChild(final String s) {
-            super(s);
-        }
-    }
-
-    public static class Complex {
-        private IntChild intChild = new IntChild(100);
-        private StringChild stringChild = new StringChild("what what?");
-        private BaseType<String> baseType = new StringChild("so tricksy!");
-        //        private Map<String, Double> map;
-
-        public Complex() {
-        }
-
-        Complex(final IntChild intChild, final StringChild stringChild,
-                       final BaseType<String> baseType) {
-            this.intChild = intChild;
-            this.stringChild = stringChild;
-            this.baseType = baseType;
-        }
-
-        public BaseType<String> getBaseType() {
-            return baseType;
-        }
-
-        public IntChild getIntChild() {
-            return intChild;
-        }
-
-        public void setBaseType(final BaseType<String> baseType) {
-            this.baseType = baseType;
-        }
-
-        public void setIntChild(final IntChild intChild) {
-            this.intChild = intChild;
-        }
-
-        public StringChild getStringChild() {
-            return stringChild;
-        }
-
-        public Complex setStringChild(final StringChild stringChild) {
-            this.stringChild = stringChild;
-            return this;
-        }
-
-        @Override
-        public boolean equals(final Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (!(o instanceof Complex)) {
-                return false;
-            }
-
-            final Complex complex = (Complex) o;
-
-            if (intChild != null ? !intChild.equals(complex.intChild) : complex.intChild != null) {
-                return false;
-            }
-            if (stringChild != null ? !stringChild.equals(complex.stringChild) : complex.stringChild != null) {
-                return false;
-            }
-            return baseType != null ? baseType.equals(complex.baseType) : complex.baseType == null;
-
-        }
-
-        @Override
-        public int hashCode() {
-            int result = intChild != null ? intChild.hashCode() : 0;
-            result = 31 * result + (stringChild != null ? stringChild.hashCode() : 0);
-            result = 31 * result + (baseType != null ? baseType.hashCode() : 0);
-            return result;
-        }
     }
 
 }

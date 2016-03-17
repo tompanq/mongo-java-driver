@@ -37,7 +37,7 @@ import static java.lang.String.format;
 /**
  * Represents a field on a class and stores various metadata such as generic parameters for use by the {@link ClassModelCodec}
  */
-@SuppressWarnings({"unchecked", "Since15"})
+@SuppressWarnings({"unchecked", "Since15", "CheckStyle"})
 public final class FieldModel extends MappedType {
     private final Field rawField;
 
@@ -46,6 +46,7 @@ public final class FieldModel extends MappedType {
     private final WeightedValue<Boolean> storeNulls;
     private final WeightedValue<Boolean> storeEmpties;
     private final ClassModel owner;
+    private final ClassModelCodecProvider provider;
     private final CodecRegistry registry;
     private final ResolvedField field;
     private Codec<?> codec;
@@ -61,9 +62,11 @@ public final class FieldModel extends MappedType {
      * @param field      the field to model
      */
     @SuppressWarnings("Since15")
-    public FieldModel(final ClassModel classModel, final CodecRegistry registry, final ResolvedField field) {
+    public FieldModel(final ClassModel classModel, final ClassModelCodecProvider provider, final CodecRegistry registry,
+                      final ResolvedField field) {
         super(field.getType().getErasedType());
         owner = classModel;
+        this.provider = provider;
         this.registry = registry;
         this.field = field;
         rawField = field.getRawMember();
@@ -97,6 +100,7 @@ public final class FieldModel extends MappedType {
         registry = model.registry;
         field = model.field;
         typeName = model.typeName;
+        provider = model.provider;
     }
 
     /**
@@ -123,9 +127,9 @@ public final class FieldModel extends MappedType {
             try {
                 codec = registry.get(getConverter().getType());
                 if(!getParameterTypes().isEmpty() && codec instanceof ClassModelCodec) {
-                    codec = new ClassModelCodec((ClassModelCodec) codec, getParameterTypes());
+                    codec = new ClassModelCodec((ClassModelCodec<?>) codec, getParameterTypes());
                 }
-            } catch (CodecConfigurationException e) {
+            } catch (final CodecConfigurationException e) {
                 throw new CodecConfigurationException(format("Can not find codec for the field '%s' of type '%s'", name, getType()), e);
             }
         }
