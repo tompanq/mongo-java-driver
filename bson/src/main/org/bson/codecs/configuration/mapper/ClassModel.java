@@ -33,21 +33,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import static java.util.Arrays.asList;
-
 /**
  * This class represents the various generics and field metadata of a class for use in mapping data to and from the database.
  */
 @SuppressWarnings({"Since15", "CheckStyle"})
 public final class ClassModel extends MappedType {
     private final Map<String, FieldModel> fields = new TreeMap<String, FieldModel>();
-    private final CodecRegistry registry;
-    private final TypeResolver resolver;
-    private final MemberResolver memberResolver;
     private final WeightedValue<String> collectionName;
     private final Map<String, List<MethodModel>> methods = new TreeMap<String, List<MethodModel>>();
-    private boolean mapped;
-    private final List<TypeVariable<?>> typeParameters = new ArrayList<TypeVariable<?>>();
     private ClassModelCodecProvider provider;
 
     /**
@@ -61,25 +54,35 @@ public final class ClassModel extends MappedType {
                       final Class<?> aClass) {
         super(aClass);
         this.provider = provider;
-        this.registry = registry;
-        this.resolver = resolver;
         collectionName = new WeightedValue<String>();
-        memberResolver = new MemberResolver(resolver);
+        final MemberResolver memberResolver = new MemberResolver(resolver);
+/*
         try {
             final Constructor<?> constructor = aClass.getConstructor();
             constructor.setAccessible(true);
         } catch (final NoSuchMethodException e) {
             throw new ClassMappingException(e.getMessage(), e);
         }
+*/
+        final ResolvedType resolved = resolver.resolve(getType());
+        final ResolvedTypeWithMembers type =
+            memberResolver.resolve(resolved, new StdConfiguration(AnnotationInclusion.INCLUDE_AND_INHERIT_IF_INHERITED), null);
+        for (final ResolvedType resolvedType : resolved.getTypeParameters()) {
+            addParameter(resolvedType.getErasedType());
+        }
+
+        for (final ResolvedField field : type.getMemberFields()) {
+            addField(field, registry);
+        }
+
+        for (final ResolvedMethod memberMethod : type.getMemberMethods()) {
+            addMethod(memberMethod, registry);
+        }
     }
 
     ClassModel(final ClassModel classModel, final List<Class<?>> parameterTypes) {
         super(classModel.getType());
-        this.registry = classModel.registry;
-        this.resolver = classModel.resolver;
-        this.memberResolver = classModel.memberResolver;
         this.collectionName = classModel.collectionName;
-        classModel.map();
 
         final TypeVariable<Class<Object>>[] typeVariables = classModel.getType().getTypeParameters();
         final Map<String, Class<?>> typeMap = new HashMap<String, Class<?>>();
@@ -128,36 +131,11 @@ public final class ClassModel extends MappedType {
         return getType().getSimpleName();
     }
 
-    /**
-     * Executes the actual mapping of the class.
-     */
-    public void map() {
-        if (!mapped) {
-            final ResolvedType resolved = resolver.resolve(getType());
-            final ResolvedTypeWithMembers type =
-                memberResolver.resolve(resolved, new StdConfiguration(AnnotationInclusion.INCLUDE_AND_INHERIT_IF_INHERITED), null);
-            typeParameters.addAll(asList(resolved.getErasedType().getTypeParameters()));
-            final List<ResolvedType> typeParameters1 = resolved.getTypeParameters();
-            for (final ResolvedType resolvedType : typeParameters1) {
-                addParameter(resolvedType.getErasedType());
-            }
-
-            for (final ResolvedField field : type.getMemberFields()) {
-                addField(field);
-            }
-
-            for (final ResolvedMethod memberMethod : type.getMemberMethods()) {
-                addMethod(memberMethod);
-            }
-            mapped = true;
-        }
-    }
-
-    private void addField(final ResolvedField field) {
+    private void addField(final ResolvedField field, final CodecRegistry registry) {
         addField(new FieldModel(this, provider, registry, field));
     }
 
-    private void addMethod(final ResolvedMethod method) {
+    private void addMethod(final ResolvedMethod method, final CodecRegistry registry) {
         final MethodModel model;
         try {
             model = new MethodModel(this, registry, method);

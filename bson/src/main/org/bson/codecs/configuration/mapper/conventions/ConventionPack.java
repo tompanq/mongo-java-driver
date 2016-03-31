@@ -58,7 +58,6 @@ public abstract class ConventionPack {
      * @param model the ClassModel to process
      */
     public void apply(final ClassModel model) {
-        model.map();
         for (final String phase : getPhases()) {
             for (final Convention convention : getConventions(phase)) {
                 convention.apply(model);

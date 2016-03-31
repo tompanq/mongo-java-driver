@@ -29,6 +29,7 @@ import org.bson.codecs.configuration.mapper.ClassModelCodec;
 import org.bson.codecs.configuration.mapper.ClassModelCodecProvider;
 import org.bson.codecs.configuration.mapper.entities.Address;
 import org.bson.codecs.configuration.mapper.entities.BaseGenericType;
+import org.bson.codecs.configuration.mapper.entities.Collections;
 import org.bson.codecs.configuration.mapper.entities.Complex;
 import org.bson.codecs.configuration.mapper.entities.Entity;
 import org.bson.codecs.configuration.mapper.entities.IntChild;
@@ -40,7 +41,38 @@ import org.bson.codecs.configuration.mapper.entities.ZipCode;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.ResolverStyle;
+import java.time.temporal.TemporalAccessor;
+
+@SuppressWarnings("CheckStyle")
 public class ConventionPackTest {
+
+    public CodecRegistry getCodecRegistry() {
+        final ClassModelCodecProvider codecProvider = ClassModelCodecProvider
+            .builder()
+            .register(BaseGenericType.class)
+            .register(IntChild.class)
+            .register(StringChild.class)
+            .register(NamedStringChild.class)
+            .register(Complex.class)
+            .register(Collections.class)
+            .build();
+        return CodecRegistries.fromProviders(codecProvider, new ValueCodecProvider());
+    }
+
+    @Test
+    public void testCollections() {
+        final CodecRegistry registry = getCodecRegistry();
+        final Collections collections = new Collections(new IntChild(1), new IntChild(2), new IntChild(3), new StringChild("Dee"));
+
+        final BsonDocument document = new BsonDocument();
+        registry.get(Collections.class).encode(new BsonDocumentWriter(document), collections, EncoderContext.builder().build());
+        final Complex decoded = registry.get(Complex.class).decode(new BsonDocumentReader(document), DecoderContext.builder().build());
+
+        Assert.assertEquals(collections, decoded);
+    }
 
     @Test
     public void testCustomConventions() {
@@ -178,15 +210,7 @@ public class ConventionPackTest {
 
     @Test
     public void testPolymorphism() {
-        final ClassModelCodecProvider codecProvider = ClassModelCodecProvider
-            .builder()
-            .register(BaseGenericType.class)
-            .register(IntChild.class)
-            .register(StringChild.class)
-            .register(NamedStringChild.class)
-            .register(Complex.class)
-            .build();
-        final CodecRegistry registry = CodecRegistries.fromProviders(codecProvider, new ValueCodecProvider());
+        final CodecRegistry registry = getCodecRegistry();
 
         BsonDocument document = new BsonDocument();
         final StringChild bruce = new NamedStringChild("string child", "Bruce");
@@ -197,7 +221,6 @@ public class ConventionPackTest {
         Assert.assertTrue("The baseType field should be a NamedStringChild", decoded.getBaseType() instanceof NamedStringChild);
         Assert.assertEquals(complex, decoded);
     }
-
 
     @Test
     public void testTransformingConventions() {
@@ -219,5 +242,4 @@ public class ConventionPackTest {
 
         Assert.assertEquals(entity, codec.decode(new BsonDocumentReader(document), DecoderContext.builder().build()));
     }
-
 }

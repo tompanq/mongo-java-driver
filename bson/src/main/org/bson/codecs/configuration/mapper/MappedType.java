@@ -52,7 +52,7 @@ public abstract class MappedType {
      *
      * @param parameter type parameter type
      */
-    public void addParameter(final Class<?> parameter) {
+    protected void addParameter(final Class<?> parameter) {
         parameterTypes.add(parameter);
     }
 
