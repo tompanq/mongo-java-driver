@@ -41,7 +41,7 @@ import static java.lang.String.format;
  * Represents a field on a class and stores various metadata such as generic parameters for use by the {@link ClassModelCodec}
  */
 @SuppressWarnings({"unchecked", "Since15", "CheckStyle"})
-public final class FieldModel extends MappedType {
+public class FieldModel extends MappedType {
     private final Field rawField;
 
     private final WeightedValue<String> name;
@@ -56,6 +56,7 @@ public final class FieldModel extends MappedType {
     private Converter<?, ?> converter = new IdentityConverter();
     private final String typeName;
     private List<ResolvedType> typeParameters;
+    private FieldType fieldType;
 
     /**
      * Create the FieldModel
@@ -81,15 +82,15 @@ public final class FieldModel extends MappedType {
 
         typeParameters = field.getType().getTypeParameters();
 
-//        final List<ResolvedType> typeParameters = field.getType().getTypeParameters();
         for (final ResolvedType parameter : typeParameters) {
             addParameter(parameter.getErasedType());
         }
-        if (rawField.getType().equals(Object.class)) {
+        if (getType().equals(Object.class)) {
             typeName = rawField.getGenericType().getTypeName();
         } else {
             typeName = null;
         }
+        fieldType = FieldType.wrap(this, field.getType());
     }
 
     public FieldModel(final FieldModel model, final Map<String, Class<?>> typeMap) {
@@ -115,23 +116,23 @@ public final class FieldModel extends MappedType {
      */
     public void decode(final Object entity, final BsonReader reader, final DecoderContext context) {
         try {
-            Object value;
+            Object value = fieldType.decode(reader, context);
+/*
             if(isCollection()) {
                 reader.readStartArray();
 
                 final Collection<?> list = newCollection();
                 while (reader.readBsonType() != BsonType.END_OF_DOCUMENT) {
-                    list.add(readValue(reader, decoderContext, null, path));
+//                    list.add(readValue(reader, decoderContext, null, path));
                 }
                 reader.readEndArray();
                 value = list;
             } else if(isMap()) {
-                final Map<?,?> map = newMap();
-
-                value = map;
+                value = newMap();
             } else {
                 value = getCodec(getType()).decode(reader, context);
             }
+*/
             rawField.set(entity, getConverter().unapply(value));
         } catch (final IllegalAccessException e) {
             // shouldn't get this but just in case...
@@ -204,35 +205,39 @@ public final class FieldModel extends MappedType {
     public void encode(final Object entity, final BsonWriter writer, final EncoderContext encoderContext) {
         if (isIncluded()) {
             final Object value = get(entity);
-            boolean toStore = value != null || storeNulls.get();
-            if (isCollection()) {
-                final Collection<?> collection = (Collection<?>) value;
-                if(!collection.isEmpty() || storeEmpties.get()) {
-                    writer.writeName(getName());
-                    writer.writeStartArray();
-                    for (final Object o : collection) {
-                        final Codec<Object> codec = (Codec<Object>) getCodec(o.getClass());
-                        codec.encode(writer, getConverter().apply(o), encoderContext);
-                    }
-                    writer.writeEndArray();
-                }
-            } else if (isMap()) {
-                toStore &= (!((Map<?, ?>) value).isEmpty() || storeEmpties.get());
-                // TODO:  actually store stuff
-            } else if (toStore) {
+            if (value != null || storeNulls.get()) {
                 writer.writeName(getName());
-                final Codec<Object> codec = (Codec<Object>) getCodec(value.getClass());
-                codec.encode(writer, value, encoderContext);
+                fieldType.encode(value, writer, encoderContext);
+/*
+                if (isCollection()) {
+                    final Collection<?> collection = (Collection<?>) value;
+                    if (!collection.isEmpty() || storeEmpties.get()) {
+                        writer.writeName(getName());
+                        writer.writeStartArray();
+                        for (final Object o : collection) {
+                            fieldType.encode(o, writer, encoderContext);
+                        }
+                        writer.writeEndArray();
+                    }
+                } else if (isMap()) {
+//                    toStore &= (!((Map<?, ?>) value).isEmpty() || storeEmpties.get());
+                    // TODO:  actually store stuff
+                } else {
+                    writer.writeName(getName());
+                    final Codec<Object> codec = (Codec<Object>) getCodec(value.getClass());
+                    codec.encode(writer, value, encoderContext);
+                }
+*/
             }
         }
     }
 
     public boolean isMap() {
-        return Map.class.isAssignableFrom(rawField.getType());
+        return MappingUtils.isMap(getType());
     }
 
     public boolean isCollection() {
-        return Collection.class.isAssignableFrom(rawField.getType());
+        return MappingUtils.isCollection(getType());
     }
 
     /**

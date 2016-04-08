@@ -20,7 +20,7 @@ package org.bson.codecs.configuration.mapper.entities;
 public class Complex {
     private IntChild intChild = new IntChild(100);
     private StringChild stringChild = new StringChild("what what?");
-    private BaseGenericType<String> baseType = new StringChild("so tricksy!");
+    private BaseGenericType<String> baseType = new BaseGenericType<String>("so tricksy!");
 
     public Complex() {
     }

@@ -34,6 +34,8 @@ import org.bson.codecs.configuration.mapper.entities.Complex;
 import org.bson.codecs.configuration.mapper.entities.Entity;
 import org.bson.codecs.configuration.mapper.entities.IntChild;
 import org.bson.codecs.configuration.mapper.entities.NamedStringChild;
+import org.bson.codecs.configuration.mapper.entities.Nested;
+import org.bson.codecs.configuration.mapper.entities.NestedNested;
 import org.bson.codecs.configuration.mapper.entities.Person;
 import org.bson.codecs.configuration.mapper.entities.SecureEntity;
 import org.bson.codecs.configuration.mapper.entities.StringChild;
@@ -41,10 +43,7 @@ import org.bson.codecs.configuration.mapper.entities.ZipCode;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
-import java.time.format.ResolverStyle;
-import java.time.temporal.TemporalAccessor;
+import java.util.Arrays;
 
 @SuppressWarnings("CheckStyle")
 public class ConventionPackTest {
@@ -58,6 +57,8 @@ public class ConventionPackTest {
             .register(NamedStringChild.class)
             .register(Complex.class)
             .register(Collections.class)
+            .register(Nested.class)
+            .register(NestedNested.class)
             .build();
         return CodecRegistries.fromProviders(codecProvider, new ValueCodecProvider());
     }
@@ -69,7 +70,8 @@ public class ConventionPackTest {
 
         final BsonDocument document = new BsonDocument();
         registry.get(Collections.class).encode(new BsonDocumentWriter(document), collections, EncoderContext.builder().build());
-        final Complex decoded = registry.get(Complex.class).decode(new BsonDocumentReader(document), DecoderContext.builder().build());
+        final Collections decoded =
+            registry.get(Collections.class).decode(new BsonDocumentReader(document), DecoderContext.builder().build());
 
         Assert.assertEquals(collections, decoded);
     }
@@ -209,10 +211,47 @@ public class ConventionPackTest {
     }
 
     @Test
+    public void testNesteds() {
+        final CodecRegistry registry = getCodecRegistry();
+        final Nested nested = new Nested(
+            Arrays.asList(
+                Arrays.<BaseGenericType<?>>asList(new IntChild(1), new IntChild(2)),
+                Arrays.asList(new IntChild(3), new StringChild("Dee"))
+            ));
+
+
+        roundTrip(registry, nested);
+
+        final NestedNested nestednested = new NestedNested(
+            Arrays.asList(
+                Arrays.asList(
+                    Arrays.<BaseGenericType<?>>asList(new IntChild(1), new IntChild(2)),
+                    Arrays.asList(new IntChild(3), new StringChild("Dee"))
+                ),
+                Arrays.asList(
+                    Arrays.<BaseGenericType<?>>asList(new IntChild(1), new IntChild(2)),
+                    Arrays.asList(new IntChild(3), new StringChild("Dee"))
+                )
+            ));
+        roundTrip(registry, nestednested);
+    }
+
+    public <T>void roundTrip(final CodecRegistry registry, final T object) {
+        final DecoderContext decoderContext = DecoderContext.builder().build();
+        final EncoderContext encoderContext = EncoderContext.builder().build();
+
+        final BsonDocument document = new BsonDocument();
+        final Class<T> klass = (Class<T>) object.getClass();
+        registry.get(klass).encode(new BsonDocumentWriter(document), object, encoderContext);
+        final Object decoded = registry.get(klass).decode(new BsonDocumentReader(document), decoderContext);
+        Assert.assertEquals(object, decoded);
+    }
+
+    @Test
     public void testPolymorphism() {
         final CodecRegistry registry = getCodecRegistry();
 
-        BsonDocument document = new BsonDocument();
+        final BsonDocument document = new BsonDocument();
         final StringChild bruce = new NamedStringChild("string child", "Bruce");
         final Complex complex = new Complex(new IntChild(1), new StringChild("Kung Pow"), bruce);
         registry.get(Complex.class).encode(new BsonDocumentWriter(document), complex, EncoderContext.builder().build());

@@ -17,25 +17,29 @@
 package org.bson.codecs.configuration.mapper.entities;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
-public class Collections {
-    private List<? extends BaseGenericType> list = new ArrayList<BaseGenericType>();
+public class NestedNested extends NestedGenerics {
+    private List<List<List<? extends BaseGenericType<?>>>> list = new ArrayList<List<List<? extends BaseGenericType<?>>>>();
 
-    public Collections() {
+    public NestedNested() {
     }
 
-    public Collections(final BaseGenericType<?>... list) {
-        this.list = Arrays.asList(list);
+    public NestedNested(final List<List<List<? extends BaseGenericType<?>>>> list) {
+        this.list = list;
     }
 
-    public List<? extends BaseGenericType> getList() {
+    public List<List<List<? extends BaseGenericType<?>>>> getList() {
         return list;
     }
 
-    public void setList(final List<BaseGenericType> list) {
+    public void setList(final List<List<List<? extends BaseGenericType<?>>>> list) {
         this.list = list;
+    }
+
+    @Override
+    public int hashCode() {
+        return list != null ? list.hashCode() : 0;
     }
 
     @Override
@@ -43,18 +47,10 @@ public class Collections {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof Collections)) {
+        if (!(o instanceof NestedNested)) {
             return false;
         }
 
-        final Collections that = (Collections) o;
-
-        return list != null ? list.equals(that.list) : that.list == null;
-
-    }
-
-    @Override
-    public int hashCode() {
-        return list != null ? list.hashCode() : 0;
+        return compare(list, ((NestedNested) o).list);
     }
 }

@@ -23,6 +23,15 @@ public class ClassMappingException extends RuntimeException {
     private static final long serialVersionUID = -4415279469780082174L;
 
     /**
+     * Constructs a new ClassMappingException with the specified cause.
+     *
+     * @param cause the cause
+     */
+    public ClassMappingException(final Throwable cause) {
+        super(cause);
+    }
+
+    /**
      * Indicates an error when trying to map a class.
      *
      * @param message the reason for the error
