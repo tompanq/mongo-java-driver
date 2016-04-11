@@ -29,16 +29,11 @@ import org.bson.codecs.configuration.mapper.ClassModelCodec;
 import org.bson.codecs.configuration.mapper.ClassModelCodecProvider;
 import org.bson.codecs.configuration.mapper.entities.Address;
 import org.bson.codecs.configuration.mapper.entities.BaseGenericType;
-import org.bson.codecs.configuration.mapper.entities.Collections;
 import org.bson.codecs.configuration.mapper.entities.Complex;
+import org.bson.codecs.configuration.mapper.entities.ContainerTypes;
 import org.bson.codecs.configuration.mapper.entities.Entity;
 import org.bson.codecs.configuration.mapper.entities.IntChild;
-import org.bson.codecs.configuration.mapper.entities.MapOfMapOfMaps;
-import org.bson.codecs.configuration.mapper.entities.MapOfMaps;
-import org.bson.codecs.configuration.mapper.entities.Maps;
 import org.bson.codecs.configuration.mapper.entities.NamedStringChild;
-import org.bson.codecs.configuration.mapper.entities.Nested;
-import org.bson.codecs.configuration.mapper.entities.NestedNested;
 import org.bson.codecs.configuration.mapper.entities.Person;
 import org.bson.codecs.configuration.mapper.entities.SecureEntity;
 import org.bson.codecs.configuration.mapper.entities.StringChild;
@@ -48,7 +43,10 @@ import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @SuppressWarnings("CheckStyle")
 public class ConventionPackTest {
@@ -61,12 +59,7 @@ public class ConventionPackTest {
             .register(StringChild.class)
             .register(NamedStringChild.class)
             .register(Complex.class)
-            .register(Collections.class)
-            .register(Nested.class)
-            .register(NestedNested.class)
-            .register(Maps.class)
-            .register(MapOfMaps.class)
-            .register(MapOfMapOfMaps.class)
+            .register(ContainerTypes.class)
             .build();
         return CodecRegistries.fromProviders(codecProvider, new ValueCodecProvider());
     }
@@ -74,40 +67,30 @@ public class ConventionPackTest {
     @Test
     public void testCollectionNesting() {
         final CodecRegistry registry = getCodecRegistry();
-        final Nested nested = new Nested(
+        ContainerTypes types = new ContainerTypes();
+        final List<List<? extends BaseGenericType<?>>> doubleList =
             Arrays.asList(
                 Arrays.<BaseGenericType<?>>asList(new IntChild(1), new IntChild(2)),
                 Arrays.asList(new IntChild(3), new StringChild("Dee"))
-                         ));
+                         );
+        types.setDoubleList(doubleList);
 
 
-        roundTrip(registry, nested);
+        roundTrip(registry, types);
 
-        final NestedNested nestednested = new NestedNested(
-            Arrays.asList(
-                Arrays.asList(
-                    Arrays.<BaseGenericType<?>>asList(new IntChild(1), new IntChild(2)),
-                    Arrays.asList(new IntChild(3), new StringChild("Dee"))
-                             ),
-                Arrays.asList(
-                    Arrays.<BaseGenericType<?>>asList(new IntChild(1), new IntChild(2)),
-                    Arrays.asList(new IntChild(3), new StringChild("Dee"))
-                             )
-                         ));
-        roundTrip(registry, nestednested);
+        types = new ContainerTypes();
+        final List<List<List<? extends BaseGenericType<?>>>> tripleList = Arrays.asList(doubleList, doubleList);
+        types.setTripleList(tripleList);
+        roundTrip(registry, types);
     }
 
     @Test
     public void testCollections() {
         final CodecRegistry registry = getCodecRegistry();
-        final Collections collections = new Collections(new IntChild(1), new IntChild(2), new IntChild(3), new StringChild("Dee"));
+        final ContainerTypes types = new ContainerTypes();
+        types.setList(Arrays.asList(new IntChild(1), new IntChild(2), new IntChild(3), new StringChild("Dee")));
 
-        final BsonDocument document = new BsonDocument();
-        registry.get(Collections.class).encode(new BsonDocumentWriter(document), collections, EncoderContext.builder().build());
-        final Collections decoded =
-            registry.get(Collections.class).decode(new BsonDocumentReader(document), DecoderContext.builder().build());
-
-        Assert.assertEquals(collections, decoded);
+        roundTrip(registry, types);
     }
 
     @Test
@@ -245,20 +228,8 @@ public class ConventionPackTest {
     }
 
     @Test
-    public void testMaps() {
-        final Maps maps = new Maps();
-        final HashMap<String, Integer> map = new HashMap<String, Integer>();
-        for (int i = 0; i < 10; i++) {
-            map.put(i + "", 10 - i);
-        }
-        maps.setMap(map);
-
-        roundTrip(getCodecRegistry(), maps);
-    }
-
-    @Test
     public void testMapNesting() {
-        final MapOfMaps maps = new MapOfMaps();
+        ContainerTypes types = new ContainerTypes();
         final HashMap<String, Integer> map1 = new HashMap<String, Integer>();
         for (int i = 0; i < 10; i++) {
             map1.put(i + "", 10 - i);
@@ -270,16 +241,28 @@ public class ConventionPackTest {
         final HashMap<String, Map<String, Integer>> map = new HashMap<String, Map<String, Integer>>();
         map.put("map1", map1);
         map.put("map2", map2);
-        maps.setMap(map);
+        types.setDoubleMap(map);
 
-        roundTrip(getCodecRegistry(), maps);
+        roundTrip(getCodecRegistry(), types);
 
         final Map<String, Map<String, Map<String, Integer>>> bigMap = new HashMap<String, Map<String, Map<String, Integer>>>();
         bigMap.put("uber", map);
-        final MapOfMapOfMaps uberMap = new MapOfMapOfMaps();
-        uberMap.setMap(bigMap);
+        types = new ContainerTypes();
+        types.setTripleMap(bigMap);
 
-        roundTrip(getCodecRegistry(), uberMap);
+        roundTrip(getCodecRegistry(), types);
+    }
+
+    @Test
+    public void testMaps() {
+        final ContainerTypes types = new ContainerTypes();
+        final HashMap<String, Integer> map = new HashMap<String, Integer>();
+        for (int i = 0; i < 10; i++) {
+            map.put(i + "", 10 - i);
+        }
+        types.setMap(map);
+
+        roundTrip(getCodecRegistry(), types);
     }
 
     @Test
@@ -294,6 +277,28 @@ public class ConventionPackTest {
 
         Assert.assertTrue("The baseType field should be a NamedStringChild", decoded.getBaseType() instanceof NamedStringChild);
         Assert.assertEquals(complex, decoded);
+    }
+
+    @Test
+    public void testSets() {
+        final CodecRegistry registry = getCodecRegistry();
+        ContainerTypes types = new ContainerTypes();
+        final Set set = new HashSet(Arrays.asList(new IntChild(1), new IntChild(2), new IntChild(3), new StringChild("Dee")));
+        types.setSet(set);
+        roundTrip(registry, types);
+
+        types = new ContainerTypes();
+        final Set doubleSet = new HashSet();
+        doubleSet.add(set);
+        doubleSet.add(set);
+        types.setDoubleSet(doubleSet);
+        roundTrip(registry, types);
+
+        types = new ContainerTypes();
+        final Set<Set<Set<? extends BaseGenericType<?>>>> tripleSet = new HashSet<Set<Set<? extends BaseGenericType<?>>>>();
+        tripleSet.add(doubleSet);
+        tripleSet.add(doubleSet);
+        types.setTripleSet(tripleSet);
     }
 
     @Test

@@ -27,9 +27,11 @@ import org.bson.codecs.EncoderContext;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 @SuppressWarnings("CheckStyle")
 public abstract class FieldType {
@@ -48,8 +50,17 @@ public abstract class FieldType {
     public static FieldType wrap(final FieldModel fieldModel, final ResolvedType type) {
         FieldType fieldType = null;
         if (FieldType.isCollection(type.getErasedType())) {
-            final ResolvedType listType = type.getTypeParameters().get(0);
-            fieldType = new IterableType(FieldType.wrap(fieldModel, listType), fieldModel);
+            final ResolvedType collectionType = type.getTypeParameters().get(0);
+            final Class<?> concreteClass;
+            final Class<?> erasedType = type.getErasedType();
+            if (List.class.isAssignableFrom(erasedType)) {
+                concreteClass = ArrayList.class;
+            } else if (Set.class.isAssignableFrom(erasedType)){
+                concreteClass = HashSet.class;
+            } else {
+                throw new ClassMappingException("Unknown Collection type found: " + erasedType.getName());
+            }
+            fieldType = new IterableType(FieldType.wrap(fieldModel, collectionType), fieldModel, concreteClass);
         } else if (FieldType.isMap(type.getErasedType())) {
             final List<ResolvedType> types = type.getTypeParameters();
             final ResolvedType keyType = types.get(0);
@@ -126,30 +137,39 @@ class ConcreteFieldType extends FieldType {
 class IterableType extends FieldType {
     private final FieldType type;
 
-    public IterableType(final FieldType type, final FieldModel fieldModel) {
-        super(fieldModel, ArrayList.class);
+    public IterableType(final FieldType type, final FieldModel fieldModel, final Class<?> concreteClass) {
+        super(fieldModel, concreteClass);
         this.type = type;
     }
 
     @Override
     public Object decode(final BsonReader reader, final DecoderContext context) {
-        reader.readStartArray();
+        Collection<Object> collection = null;
+        if (reader.getCurrentBsonType().equals(BsonType.NULL)) {
+            reader.readNull();
+        } else {
+            reader.readStartArray();
 
-        final Collection<Object> list = createConcreteType();
-        while (reader.readBsonType() != BsonType.END_OF_DOCUMENT) {
-            list.add(type.decode(reader, context));
+            collection = createConcreteType();
+            while (reader.readBsonType() != BsonType.END_OF_DOCUMENT) {
+                collection.add(type.decode(reader, context));
+            }
+            reader.readEndArray();
         }
-        reader.readEndArray();
-        return list;
+        return collection;
     }
 
     @Override
     public void encode(final Object o, final BsonWriter writer, final EncoderContext encoderContext) {
-        writer.writeStartArray();
-        for (final Object object : (List<?>) o) {
-            type.encode(object, writer, encoderContext);
+        if (o != null) {
+            writer.writeStartArray();
+            for (final Object object : (Collection<?>) o) {
+                type.encode(object, writer, encoderContext);
+            }
+            writer.writeEndArray();
+        } else {
+            writer.writeNull();
         }
-        writer.writeEndArray();
     }
 }
 
@@ -163,22 +183,31 @@ class MapType extends FieldType {
 
     @Override
     public Object decode(final BsonReader reader, final DecoderContext context) {
-        final Map<Object, Object> map = createConcreteType();
-        reader.readStartDocument();
-        while (reader.readBsonType() != BsonType.END_OF_DOCUMENT) {
-            map.put(reader.readName(), type.decode(reader, context));
+        Map<Object, Object> map = null;
+        if (reader.getCurrentBsonType().equals(BsonType.NULL)) {
+            reader.readNull();
+        } else {
+            map = createConcreteType();
+            reader.readStartDocument();
+            while (reader.readBsonType() != BsonType.END_OF_DOCUMENT) {
+                map.put(reader.readName(), type.decode(reader, context));
+            }
+            reader.readEndDocument();
         }
-        reader.readEndDocument();
         return map;
     }
 
     @Override
     public void encode(final Object o, final BsonWriter writer, final EncoderContext encoderContext) {
-        writer.writeStartDocument();
-        for (final Entry<?, ?> entry : ((Map<?, ?>) o).entrySet()) {
-            writer.writeName(entry.getKey().toString());
-            type.encode(entry.getValue(), writer, encoderContext);
+        if (o != null) {
+            writer.writeStartDocument();
+            for (final Entry<?, ?> entry : ((Map<?, ?>) o).entrySet()) {
+                writer.writeName(entry.getKey().toString());
+                type.encode(entry.getValue(), writer, encoderContext);
+            }
+            writer.writeEndDocument();
+        } else {
+            writer.writeNull();
         }
-        writer.writeEndDocument();
     }
 }
