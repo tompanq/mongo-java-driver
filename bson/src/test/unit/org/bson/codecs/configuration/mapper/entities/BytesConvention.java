@@ -24,15 +24,18 @@ import org.bson.codecs.configuration.mapper.conventions.Converter;
 
 import java.util.UUID;
 
+/**
+ * Convert a UUID to a byte[]
+ */
 public class BytesConvention implements Convention {
     @Override
     public void apply(final ClassModel classModel) {
         for (final FieldModel fieldModel : classModel.getFields()) {
             if (fieldModel.hasAnnotation(Bytes.class)) {
-                fieldModel.setConverter(new Converter<UUID, byte[]>() {
+                fieldModel.setConverter(new Converter() {
 
                     @Override
-                    public byte[] apply(final UUID value) {
+                    public Object apply(final Object value) {
                         return value.toString().getBytes();
                     }
 
@@ -42,8 +45,8 @@ public class BytesConvention implements Convention {
                     }
 
                     @Override
-                    public UUID unapply(final byte[] value) {
-                        return UUID.fromString(new String(value));
+                    public Object unapply(final Object value) {
+                        return UUID.fromString(new String(value.toString()));
                     }
                 });
             }

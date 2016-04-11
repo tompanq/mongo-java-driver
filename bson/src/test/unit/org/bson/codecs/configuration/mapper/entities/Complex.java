@@ -88,10 +88,6 @@ public class Complex {
 
     @Override
     public String toString() {
-        return "Complex{" +
-            "baseType=" + baseType +
-            ", intChild=" + intChild +
-            ", stringChild=" + stringChild +
-            '}';
+        return String.format("Complex{baseType=%s, intChild=%s, stringChild=%s}", baseType, intChild, stringChild);
     }
 }

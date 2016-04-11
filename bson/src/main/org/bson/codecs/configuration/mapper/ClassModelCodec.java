@@ -24,6 +24,7 @@ import org.bson.codecs.EncoderContext;
 import org.bson.codecs.configuration.CodecRegistry;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
 /**
@@ -31,42 +32,54 @@ import java.util.List;
  *
  * @param <T> the type to encode/decode
  */
-@SuppressWarnings({"unchecked", "CheckStyle"})
+@SuppressWarnings({"unchecked"})
 public class ClassModelCodec<T extends Object> implements Codec<T> {
     private final ClassModel classModel;
     private final ClassModelCodecProvider provider;
     private final CodecRegistry registry;
+    private final Constructor<?> constructor;
 
     /**
      * Creates a Codec for the ClassModel
      *
-     * @param model the model to use
+     * @param provider the provider for this codec
+     * @param registry the codec registry for this codec
+     * @param model    the model to use
      */
     public ClassModelCodec(final ClassModel model, final ClassModelCodecProvider provider, final CodecRegistry registry) {
         this.classModel = model;
         this.provider = provider;
         this.registry = registry;
+        try {
+            constructor = classModel.getType().getConstructor();
+            constructor.setAccessible(true);
+        } catch (final NoSuchMethodException e) {
+            throw new ClassMappingException("No zero arugment constructor was found for the type " + classModel.getType().getName());
+        }
     }
 
     ClassModelCodec(final ClassModelCodec<T> codec, final List<Class<?>> parameterTypes) {
         this.classModel = new ClassModel(codec.getClassModel(), parameterTypes);
         this.provider = codec.provider;
         this.registry = codec.registry;
+        try {
+            constructor = classModel.getType().getConstructor();
+            constructor.setAccessible(true);
+        } catch (final NoSuchMethodException e) {
+            throw new ClassMappingException("No zero arugment constructor was found for the type " + classModel.getType().getName());
+        }
     }
 
-    public T createInstance()
-        throws NoSuchMethodException, InstantiationException, IllegalAccessException, java.lang.reflect.InvocationTargetException {
-        final Constructor<?> ctor = getClassModel().getType().getConstructor();
-        //        ctor.setAccessible(true);
-        return (T) ctor.newInstance();
+    private T createInstance() throws InstantiationException, InvocationTargetException, IllegalAccessException {
+        return (T) constructor.newInstance();
     }
 
     @Override
     public T decode(final BsonReader reader, final DecoderContext decoderContext) {
         try {
             reader.mark();
-            ClassModelCodec<T> codec = findActualCodec(reader);
-            T entity = codec.createInstance();
+            final ClassModelCodec<T> codec = findActualCodec(reader);
+            final T entity = codec.createInstance();
             reader.reset();
             reader.readStartDocument();
             codec.readFields(entity, reader, decoderContext);
@@ -79,17 +92,8 @@ public class ClassModelCodec<T extends Object> implements Codec<T> {
 
     @Override
     public void encode(final BsonWriter writer, final Object entity, final EncoderContext encoderContext) {
-        ClassModelCodec<T> codec = (ClassModelCodec<T>) findActualCodec(entity.getClass());
+        final ClassModelCodec<T> codec = (ClassModelCodec<T>) findActualCodec(entity.getClass());
         codec.writeFields(writer, entity, encoderContext);
-    }
-
-    public void writeFields(final BsonWriter writer, final Object entity, final EncoderContext encoderContext) {
-        writer.writeStartDocument();
-        writer.writeString("_t", entity.getClass().getName());
-        for (final FieldModel fieldModel : classModel.getFields()) {
-            fieldModel.encode(entity, writer, encoderContext);
-        }
-        writer.writeEndDocument();
     }
 
     @Override
@@ -104,7 +108,7 @@ public class ClassModelCodec<T extends Object> implements Codec<T> {
         return classModel;
     }
 
-    public void readFields(final T entity, final BsonReader reader, final DecoderContext decoderContext) {
+    void readFields(final T entity, final BsonReader reader, final DecoderContext decoderContext) {
         while (reader.readBsonType() != BsonType.END_OF_DOCUMENT) {
             final String name = reader.readName();
             if (name.equals("_t")) {
@@ -123,6 +127,17 @@ public class ClassModelCodec<T extends Object> implements Codec<T> {
         return String.format("ClassModelCodec<%s>", classModel.getName());
     }
 
+    void writeFields(final BsonWriter writer, final Object entity, final EncoderContext encoderContext) {
+        if (entity != null) {
+            writer.writeStartDocument();
+            writer.writeString("_t", entity.getClass().getName());
+            for (final FieldModel fieldModel : classModel.getFields()) {
+                fieldModel.encode(entity, writer, encoderContext);
+            }
+            writer.writeEndDocument();
+        }
+    }
+
     private <K> ClassModelCodec<K> findActualCodec(final BsonReader reader) {
         reader.readStartDocument();
         while (reader.readBsonType() != BsonType.END_OF_DOCUMENT) {
@@ -136,6 +151,8 @@ public class ClassModelCodec<T extends Object> implements Codec<T> {
                     throw new ClassMappingException("A mapped class type could not be found: " + className);
                 }
                 return findActualCodec(aClass);
+            } else {
+                reader.skipValue();
             }
         }
         return (ClassModelCodec<K>) this;

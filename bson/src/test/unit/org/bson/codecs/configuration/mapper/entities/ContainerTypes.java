@@ -24,15 +24,15 @@ import java.util.Set;
  * A test entity containing various forms of nested container types.
  */
 public class ContainerTypes extends NestedGenerics {
-    private List<? extends BaseGenericType> list;
+    private List<? extends BaseGenericType<?>> list;
     private List<List<? extends BaseGenericType<?>>> doubleList;
     private List<List<List<? extends BaseGenericType<?>>>> tripleList;
 
-    private Map<String, Integer> map;
-    private Map<String, Map<String, Integer>> doubleMap;
-    private Map<String, Map<String, Map<String, Integer>>> tripleMap;
+    private Map<String, BaseGenericType<?>> map;
+    private Map<String, Map<String, BaseGenericType<?>>> doubleMap;
+    private Map<String, Map<String, Map<String, BaseGenericType<?>>>> tripleMap;
 
-    private Set<? extends BaseGenericType> set;
+    private Set<? extends BaseGenericType<?>> set;
     private Set<Set<? extends BaseGenericType<?>>> doubleSet;
     private Set<Set<Set<? extends BaseGenericType<?>>>> tripleSet;
 
@@ -55,14 +55,14 @@ public class ContainerTypes extends NestedGenerics {
     /**
      * @return the double map
      */
-    public Map<String, Map<String, Integer>> getDoubleMap() {
+    public Map<String, Map<String, BaseGenericType<?>>> getDoubleMap() {
         return doubleMap;
     }
 
     /**
      * @param doubleMap the double map
      */
-    public void setDoubleMap(final Map<String, Map<String, Integer>> doubleMap) {
+    public void setDoubleMap(final Map<String, Map<String, BaseGenericType<?>>> doubleMap) {
         this.doubleMap = doubleMap;
     }
 
@@ -81,30 +81,30 @@ public class ContainerTypes extends NestedGenerics {
     }
 
     /**
-     * return the list
+     * @return the list
      */
-    public List<? extends BaseGenericType> getList() {
+    public List<? extends BaseGenericType<?>> getList() {
         return list;
     }
 
     /**
      * @param list the list
      */
-    public void setList(final List<? extends BaseGenericType> list) {
+    public void setList(final List<? extends BaseGenericType<?>> list) {
         this.list = list;
     }
 
     /**
-     * return the map
+     * @return the map
      */
-    public Map<String, Integer> getMap() {
+    public Map<String, BaseGenericType<?>> getMap() {
         return map;
     }
 
     /**
      * @param map the map
      */
-    public void setMap(final Map<String, Integer> map) {
+    public void setMap(final Map<String, BaseGenericType<?>> map) {
         this.map = map;
     }
 
@@ -124,16 +124,16 @@ public class ContainerTypes extends NestedGenerics {
     }
 
     /**
-     * return the set
+     * @return the set
      */
-    public Set<? extends BaseGenericType> getSet() {
+    public Set<? extends BaseGenericType<?>> getSet() {
         return set;
     }
 
     /**
      * @param set the set
      */
-    public void setSet(final Set<? extends BaseGenericType> set) {
+    public void setSet(final Set<? extends BaseGenericType<?>> set) {
         this.set = set;
     }
 
@@ -154,14 +154,14 @@ public class ContainerTypes extends NestedGenerics {
     /**
      * @return the triple map
      */
-    public Map<String, Map<String, Map<String, Integer>>> getTripleMap() {
+    public Map<String, Map<String, Map<String, BaseGenericType<?>>>> getTripleMap() {
         return tripleMap;
     }
 
     /**
      * @param tripleMap the triple map
      */
-    public void setTripleMap(final Map<String, Map<String, Map<String, Integer>>> tripleMap) {
+    public void setTripleMap(final Map<String, Map<String, Map<String, BaseGenericType<?>>>> tripleMap) {
         this.tripleMap = tripleMap;
     }
 

@@ -21,6 +21,9 @@ import org.bson.codecs.configuration.mapper.FieldModel;
 import org.bson.codecs.configuration.mapper.conventions.Convention;
 import org.bson.codecs.configuration.mapper.conventions.ConventionPack;
 
+/**
+ * Applies a conversion to an annotated field.
+ */
 public class Rot13Convention implements Convention {
     @Override
     public void apply(final ClassModel classModel) {

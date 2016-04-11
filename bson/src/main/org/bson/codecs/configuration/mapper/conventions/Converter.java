@@ -19,17 +19,15 @@ package org.bson.codecs.configuration.mapper.conventions;
 /**
  * This defines a conversion between two types for use when
  *
- * @param <F> The "from" type as exists in the entity field being converted.
- * @param <T> The "to" value which this Converter emits
  */
-public interface Converter<F, T> {
+public interface Converter {
     /**
      * Converts a value of type F to one of type T
      *
      * @param value the value to convert
      * @return the new T value
      */
-    T apply(F value);
+    Object apply(Object value);
 
     /**
      * @return The Class representing the type T
@@ -42,5 +40,5 @@ public interface Converter<F, T> {
      * @param value the value to convert
      * @return the new F value
      */
-    F unapply(T value);
+    Object unapply(Object value);
 }

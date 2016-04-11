@@ -31,7 +31,7 @@ public final class MethodModel extends MappedType {
      * @param method the method being modeled
      */
     public MethodModel(final ClassModel model, final CodecRegistry registry, final ResolvedMethod method) {
-        super(method.getType() == null ? Void.class : method.getType().getErasedType(), model);
+        super(method.getType() == null ? Void.class : method.getType().getErasedType());
         this.method = method;
     }
 

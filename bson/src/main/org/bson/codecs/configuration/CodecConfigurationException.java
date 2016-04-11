@@ -35,6 +35,12 @@ public class CodecConfigurationException extends RuntimeException {
         super(msg);
     }
 
+    /**
+     * Construct a new instance and wraps a cause
+     *
+     * @param message the message
+     * @param cause   the underlying cause
+     */
     public CodecConfigurationException(final String message, final Throwable cause) {
         super(message, cause);
     }

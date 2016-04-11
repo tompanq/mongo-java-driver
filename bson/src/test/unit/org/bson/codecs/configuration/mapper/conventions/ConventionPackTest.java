@@ -39,9 +39,9 @@ import org.bson.codecs.configuration.mapper.entities.SecureEntity;
 import org.bson.codecs.configuration.mapper.entities.StringChild;
 import org.bson.codecs.configuration.mapper.entities.ZipCode;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -50,10 +50,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-@SuppressWarnings("CheckStyle")
+@SuppressWarnings("unchecked")
 public class ConventionPackTest {
 
-    public CodecRegistry getCodecRegistry() {
+    CodecRegistry getCodecRegistry() {
         final ClassModelCodecProvider codecProvider = ClassModelCodecProvider
             .builder()
             .register(BaseGenericType.class)
@@ -70,14 +70,10 @@ public class ConventionPackTest {
     public void testCollectionNesting() {
         final CodecRegistry registry = getCodecRegistry();
         ContainerTypes types = new ContainerTypes();
-        final List<List<? extends BaseGenericType<?>>> doubleList =
-            Arrays.asList(
-                Arrays.<BaseGenericType<?>>asList(new IntChild(1), new IntChild(2)),
-                Arrays.asList(new IntChild(3), new StringChild("Dee"))
-                         );
+        final List<? extends BaseGenericType<?>> list1 = Arrays.<BaseGenericType<?>>asList(new IntChild(1), new IntChild(2));
+        final List<? extends BaseGenericType<?>> list2 = Arrays.<BaseGenericType<?>>asList(new IntChild(3), new StringChild("Dee"));
+        final List<List<? extends BaseGenericType<?>>> doubleList = Arrays.asList(list1, list2);
         types.setDoubleList(doubleList);
-
-
         roundTrip(registry, types);
 
         types = new ContainerTypes();
@@ -232,22 +228,23 @@ public class ConventionPackTest {
     @Test
     public void testMapNesting() {
         ContainerTypes types = new ContainerTypes();
-        final HashMap<String, Integer> map1 = new HashMap<String, Integer>();
+        final HashMap<String, BaseGenericType<?>> map1 = new HashMap<String, BaseGenericType<?>>();
         for (int i = 0; i < 10; i++) {
-            map1.put(i + "", 10 - i);
+            map1.put(i + "", new IntChild(10 - i));
         }
-        final HashMap<String, Integer> map2 = new HashMap<String, Integer>();
+        final HashMap<String, BaseGenericType<?>> map2 = new HashMap<String, BaseGenericType<?>>();
         for (int i = 0; i < 10; i++) {
-            map2.put(i + "", i);
+            map2.put(i + "", new IntChild(i));
         }
-        final HashMap<String, Map<String, Integer>> map = new HashMap<String, Map<String, Integer>>();
+        final HashMap<String, Map<String, BaseGenericType<?>>> map = new HashMap<String, Map<String, BaseGenericType<?>>>();
         map.put("map1", map1);
         map.put("map2", map2);
         types.setDoubleMap(map);
 
         roundTrip(getCodecRegistry(), types);
 
-        final Map<String, Map<String, Map<String, Integer>>> bigMap = new HashMap<String, Map<String, Map<String, Integer>>>();
+        final Map<String, Map<String, Map<String, BaseGenericType<?>>>> bigMap
+            = new HashMap<String, Map<String, Map<String, BaseGenericType<?>>>>();
         bigMap.put("uber", map);
         types = new ContainerTypes();
         types.setTripleMap(bigMap);
@@ -258,9 +255,9 @@ public class ConventionPackTest {
     @Test
     public void testMaps() {
         final ContainerTypes types = new ContainerTypes();
-        final HashMap<String, Integer> map = new HashMap<String, Integer>();
+        final HashMap<String, BaseGenericType<?>> map = new HashMap<String, BaseGenericType<?>>();
         for (int i = 0; i < 10; i++) {
-            map.put(i + "", 10 - i);
+            map.put(i + "", new IntChild(10 - i));
         }
         types.setMap(map);
 
@@ -306,8 +303,8 @@ public class ConventionPackTest {
 
     @Test
     public void testMixedNesting() {
-        ContainerTypes types = new ContainerTypes();
-        Map<String, List<Set<? extends BaseGenericType<?>>>> mixed = new HashMap<String, List<Set<? extends BaseGenericType<?>>>>();
+        final ContainerTypes types = new ContainerTypes();
+        final Map<String, List<Set<? extends BaseGenericType<?>>>> mixed = new HashMap<String, List<Set<? extends BaseGenericType<?>>>>();
         final Set<? extends BaseGenericType<?>> set1 = new HashSet<BaseGenericType<?>>(
             Arrays.asList(new IntChild(1), new IntChild(2), new IntChild(3), new StringChild("Dee")));
         final Set<? extends BaseGenericType<?>> set2 = new HashSet<BaseGenericType<?>>(Collections.singletonList(new StringChild("Dee")));
@@ -319,6 +316,7 @@ public class ConventionPackTest {
     }
 
     @Test
+    @Ignore
     public void testTransformingConventions() {
         final ClassModelCodecProvider codecProvider = ClassModelCodecProvider
             .builder()

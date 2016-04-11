@@ -16,19 +16,12 @@
 
 package org.bson.codecs.configuration.mapper.entities;
 
-import org.bson.codecs.configuration.mapper.ClassModel;
-import org.bson.codecs.configuration.mapper.FieldModel;
-import org.bson.codecs.configuration.mapper.conventions.Convention;
-import org.bson.codecs.configuration.mapper.conventions.ConventionPack;
-import org.bson.codecs.configuration.mapper.conventions.Converter;
-
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.util.UUID;
 
 @Documented
 @Inherited

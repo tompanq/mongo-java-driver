@@ -16,7 +16,6 @@
 
 package org.bson.codecs.configuration.mapper;
 
-import com.fasterxml.classmate.TypeResolver;
 import org.bson.BsonDocument;
 import org.bson.BsonDocumentReader;
 import org.bson.BsonDocumentWriter;
@@ -38,7 +37,6 @@ import java.awt.Color;
 
 import static org.junit.Assert.assertEquals;
 
-@SuppressWarnings("CheckStyle")
 public class ClassModelCodecTest {
 
     private CodecRegistry registry;

@@ -21,11 +21,9 @@ import java.util.List;
 /**
  * A mapped type for use inside a {@link ClassModelCodec}
  */
-@SuppressWarnings("unchecked")
 public abstract class MappedType {
     private final Class<?> type;
     private final List<Class<?>> parameterTypes = new ArrayList<Class<?>>();
-    private MappedType owner;
 
     /**
      * Creates a MappedType for the given backing type
@@ -33,17 +31,6 @@ public abstract class MappedType {
      * @param type the Class to map
      */
     public MappedType(final Class<?> type) {
-        this.type = type;
-    }
-
-    /**
-     * Creates a MappedType for the given backing type and the owner
-     *
-     * @param type  the Class to map
-     * @param owner the parent of the MappedType to create
-     */
-    public MappedType(final Class<?> type, final MappedType owner) {
-        this.owner = owner;
         this.type = type;
     }
 
@@ -56,24 +43,17 @@ public abstract class MappedType {
         parameterTypes.add(parameter);
     }
 
+    /**
+     * @return the type parameters declared on this mapped type
+     */
     public List<Class<?>> getParameterTypes() {
         return parameterTypes;
     }
 
     /**
-     * The owning type of this MappedType
-     *
-     * @return the owner
-     */
-    public MappedType getOwner() {
-        return owner;
-    }
-
-    /**
-     * @param <T> the parameterized type of the Class
      * @return the backing class for the MappedType
      */
-    public <T> Class<T> getType() {
-        return (Class<T>) type;
+    public Class<?> getType() {
+        return type;
     }
 }

@@ -33,16 +33,15 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-@SuppressWarnings("CheckStyle")
-public abstract class FieldType {
+abstract class FieldType {
     private final FieldModel fieldModel;
     private Class<?> concreteClass;
 
-    public FieldType(final FieldModel fieldModel) {
+    FieldType(final FieldModel fieldModel) {
         this.fieldModel = fieldModel;
     }
 
-    protected FieldType(final FieldModel fieldModel, final Class<?> concreteClass) {
+    FieldType(final FieldModel fieldModel, final Class<?> concreteClass) {
         this.fieldModel = fieldModel;
         this.concreteClass = concreteClass;
     }
@@ -85,6 +84,7 @@ public abstract class FieldType {
         return Map.class.isAssignableFrom(type);
     }
 
+    @SuppressWarnings("unchecked")
     public <T> T createConcreteType() {
         try {
             return (T) getConcreteClass().newInstance();
@@ -126,6 +126,7 @@ class ConcreteFieldType extends FieldType {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public void encode(final Object o, final BsonWriter writer, final EncoderContext encoderContext) {
         final Codec<Object> codec = (Codec<Object>) getFieldModel().getCodec(o.getClass());
         codec.encode(writer, getFieldModel().getConverter().apply(o), encoderContext);
@@ -133,11 +134,10 @@ class ConcreteFieldType extends FieldType {
 
 }
 
-@SuppressWarnings("CheckStyle")
 class IterableType extends FieldType {
     private final FieldType type;
 
-    public IterableType(final FieldType type, final FieldModel fieldModel, final Class<?> concreteClass) {
+    IterableType(final FieldType type, final FieldModel fieldModel, final Class<?> concreteClass) {
         super(fieldModel, concreteClass);
         this.type = type;
     }

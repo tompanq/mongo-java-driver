@@ -18,10 +18,10 @@ package org.bson.codecs.configuration.mapper.entities;
 
 import org.bson.codecs.configuration.mapper.conventions.Converter;
 
-class Rot13Converter implements Converter<String, String> {
+class Rot13Converter implements Converter {
 
     @Override
-    public String apply(final String value) {
+    public String apply(final Object value) {
         return rot13(value);
     }
 
@@ -31,16 +31,16 @@ class Rot13Converter implements Converter<String, String> {
     }
 
     @Override
-    public String unapply(final String value) {
+    public Object unapply(final Object value) {
         return rot13(value);
     }
 
-    private String rot13(final String value) {
+    private String rot13(final Object value) {
         if (value == null) {
             return null;
         }
         final StringBuilder sb = new StringBuilder();
-        for (char c : value.toCharArray()) {
+        for (char c : value.toString().toCharArray()) {
             if (c >= 'a' && c <= 'm') {
                 c += 13;
             } else if (c >= 'n' && c <= 'z') {

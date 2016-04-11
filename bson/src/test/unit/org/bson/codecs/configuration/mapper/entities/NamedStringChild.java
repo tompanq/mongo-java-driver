@@ -16,30 +16,45 @@
 
 package org.bson.codecs.configuration.mapper.entities;
 
+/**
+ * A StringChild with a name
+ */
 public class NamedStringChild extends StringChild {
     private String name;
 
+    /**
+     * For the serializer
+     */
     public NamedStringChild() {
     }
 
+    /**
+     * Creates a StringChild with the given name
+     * @param s the value
+     * @param name the name
+     */
     public NamedStringChild(final String s, final String name) {
         super(s);
         this.name = name;
     }
 
+    /**
+     * @return the name
+     */
     public String getName() {
         return name;
     }
 
+    /**
+     * @param name the name
+     */
     public void setName(final String name) {
         this.name = name;
     }
 
     @Override
     public String toString() {
-        return "NamedStringChild{" +
-            "name='" + name + '\'' +
-            "} " + super.toString();
+        return String.format("NamedStringChild{name='%s'} %s", name, super.toString());
     }
 
     @Override

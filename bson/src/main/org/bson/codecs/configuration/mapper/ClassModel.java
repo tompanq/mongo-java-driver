@@ -25,7 +25,6 @@ import com.fasterxml.classmate.members.ResolvedField;
 import com.fasterxml.classmate.members.ResolvedMethod;
 import org.bson.codecs.configuration.CodecRegistry;
 
-import java.lang.reflect.Constructor;
 import java.lang.reflect.TypeVariable;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -36,7 +35,6 @@ import java.util.TreeMap;
 /**
  * This class represents the various generics and field metadata of a class for use in mapping data to and from the database.
  */
-@SuppressWarnings({"Since15", "CheckStyle"})
 public final class ClassModel extends MappedType {
     private final Map<String, FieldModel> fields = new TreeMap<String, FieldModel>();
     private final WeightedValue<String> collectionName;
@@ -46,6 +44,7 @@ public final class ClassModel extends MappedType {
     /**
      * Construct a ClassModel for the given Classs.
      *
+     * @param provider The provider for this codec
      * @param registry the registry to use for deferred lookups for codecs for the fields.
      * @param resolver the TypeResolver used in discovery of Class metatadata
      * @param aClass   the Class to model
@@ -56,14 +55,6 @@ public final class ClassModel extends MappedType {
         this.provider = provider;
         collectionName = new WeightedValue<String>();
         final MemberResolver memberResolver = new MemberResolver(resolver);
-/*
-        try {
-            final Constructor<?> constructor = aClass.getConstructor();
-            constructor.setAccessible(true);
-        } catch (final NoSuchMethodException e) {
-            throw new ClassMappingException(e.getMessage(), e);
-        }
-*/
         final ResolvedType resolved = resolver.resolve(getType());
         final ResolvedTypeWithMembers type =
             memberResolver.resolve(resolved, new StdConfiguration(AnnotationInclusion.INCLUDE_AND_INHERIT_IF_INHERITED), null);
@@ -84,10 +75,10 @@ public final class ClassModel extends MappedType {
         super(classModel.getType());
         this.collectionName = classModel.collectionName;
 
-        final TypeVariable<Class<Object>>[] typeVariables = classModel.getType().getTypeParameters();
+        final TypeVariable<? extends Class<?>>[] typeVariables = classModel.getType().getTypeParameters();
         final Map<String, Class<?>> typeMap = new HashMap<String, Class<?>>();
         for (int i = 0; i < typeVariables.length; i++) {
-            typeMap.put(typeVariables[i].getTypeName(), parameterTypes.get(i));
+            typeMap.put(typeVariables[i].toString(), parameterTypes.get(i));
         }
         for (final FieldModel entry : classModel.fields.values()) {
             fields.put(entry.getName(), new FieldModel(entry, typeMap));
