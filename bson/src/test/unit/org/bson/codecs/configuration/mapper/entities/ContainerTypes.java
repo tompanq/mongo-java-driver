@@ -36,6 +36,8 @@ public class ContainerTypes extends NestedGenerics {
     private Set<Set<? extends BaseGenericType<?>>> doubleSet;
     private Set<Set<Set<? extends BaseGenericType<?>>>> tripleSet;
 
+    private Map<String, List<Set<? extends BaseGenericType<?>>>> mixed;
+
     /**
      * @return the double list
      */
@@ -107,6 +109,21 @@ public class ContainerTypes extends NestedGenerics {
     }
 
     /**
+     * @return the mixed container
+     */
+    public Map<String, List<Set<? extends BaseGenericType<?>>>> getMixed() {
+        return mixed;
+    }
+
+    /**
+     * @param mixed the mixed container
+     */
+    public void setMixed(
+        final Map<String, List<Set<? extends BaseGenericType<?>>>> mixed) {
+        this.mixed = mixed;
+    }
+
+    /**
      * return the set
      */
     public Set<? extends BaseGenericType> getSet() {
@@ -123,7 +140,7 @@ public class ContainerTypes extends NestedGenerics {
     /**
      * @return the triple list
      */
-   public List<List<List<? extends BaseGenericType<?>>>> getTripleList() {
+    public List<List<List<? extends BaseGenericType<?>>>> getTripleList() {
         return tripleList;
     }
 
@@ -163,6 +180,20 @@ public class ContainerTypes extends NestedGenerics {
     }
 
     @Override
+    public int hashCode() {
+        int result = list != null ? list.hashCode() : 0;
+        result = 31 * result + (doubleList != null ? doubleList.hashCode() : 0);
+        result = 31 * result + (tripleList != null ? tripleList.hashCode() : 0);
+        result = 31 * result + (map != null ? map.hashCode() : 0);
+        result = 31 * result + (doubleMap != null ? doubleMap.hashCode() : 0);
+        result = 31 * result + (tripleMap != null ? tripleMap.hashCode() : 0);
+        result = 31 * result + (set != null ? set.hashCode() : 0);
+        result = 31 * result + (doubleSet != null ? doubleSet.hashCode() : 0);
+        result = 31 * result + (tripleSet != null ? tripleSet.hashCode() : 0);
+        return result;
+    }
+
+    @Override
     public boolean equals(final Object o) {
         if (this == o) {
             return true;
@@ -199,19 +230,5 @@ public class ContainerTypes extends NestedGenerics {
         }
         return tripleSet != null ? tripleSet.equals(that.tripleSet) : that.tripleSet == null;
 
-    }
-
-    @Override
-    public int hashCode() {
-        int result = list != null ? list.hashCode() : 0;
-        result = 31 * result + (doubleList != null ? doubleList.hashCode() : 0);
-        result = 31 * result + (tripleList != null ? tripleList.hashCode() : 0);
-        result = 31 * result + (map != null ? map.hashCode() : 0);
-        result = 31 * result + (doubleMap != null ? doubleMap.hashCode() : 0);
-        result = 31 * result + (tripleMap != null ? tripleMap.hashCode() : 0);
-        result = 31 * result + (set != null ? set.hashCode() : 0);
-        result = 31 * result + (doubleSet != null ? doubleSet.hashCode() : 0);
-        result = 31 * result + (tripleSet != null ? tripleSet.hashCode() : 0);
-        return result;
     }
 }

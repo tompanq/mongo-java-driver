@@ -41,7 +41,9 @@ import org.bson.codecs.configuration.mapper.entities.ZipCode;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -283,12 +285,13 @@ public class ConventionPackTest {
     public void testSets() {
         final CodecRegistry registry = getCodecRegistry();
         ContainerTypes types = new ContainerTypes();
-        final Set set = new HashSet(Arrays.asList(new IntChild(1), new IntChild(2), new IntChild(3), new StringChild("Dee")));
+        final Set<? extends BaseGenericType<?>> set = new HashSet<BaseGenericType<?>>(
+            Arrays.asList(new IntChild(1), new IntChild(2), new IntChild(3), new StringChild("Dee")));
         types.setSet(set);
         roundTrip(registry, types);
 
         types = new ContainerTypes();
-        final Set doubleSet = new HashSet();
+        final Set<Set<? extends BaseGenericType<?>>> doubleSet = new HashSet<Set<? extends BaseGenericType<?>>>();
         doubleSet.add(set);
         doubleSet.add(set);
         types.setDoubleSet(doubleSet);
@@ -299,6 +302,20 @@ public class ConventionPackTest {
         tripleSet.add(doubleSet);
         tripleSet.add(doubleSet);
         types.setTripleSet(tripleSet);
+    }
+
+    @Test
+    public void testMixedNesting() {
+        ContainerTypes types = new ContainerTypes();
+        Map<String, List<Set<? extends BaseGenericType<?>>>> mixed = new HashMap<String, List<Set<? extends BaseGenericType<?>>>>();
+        final Set<? extends BaseGenericType<?>> set1 = new HashSet<BaseGenericType<?>>(
+            Arrays.asList(new IntChild(1), new IntChild(2), new IntChild(3), new StringChild("Dee")));
+        final Set<? extends BaseGenericType<?>> set2 = new HashSet<BaseGenericType<?>>(Collections.singletonList(new StringChild("Dee")));
+        mixed.put("first", Arrays.asList(set1, set2));
+        mixed.put("swapped", Arrays.asList(set2, set1, set2));
+        types.setMixed(mixed);
+
+        roundTrip(getCodecRegistry(), types);
     }
 
     @Test
