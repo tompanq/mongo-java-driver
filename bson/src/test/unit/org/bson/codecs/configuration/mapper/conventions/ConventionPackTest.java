@@ -33,6 +33,9 @@ import org.bson.codecs.configuration.mapper.entities.Collections;
 import org.bson.codecs.configuration.mapper.entities.Complex;
 import org.bson.codecs.configuration.mapper.entities.Entity;
 import org.bson.codecs.configuration.mapper.entities.IntChild;
+import org.bson.codecs.configuration.mapper.entities.MapOfMapOfMaps;
+import org.bson.codecs.configuration.mapper.entities.MapOfMaps;
+import org.bson.codecs.configuration.mapper.entities.Maps;
 import org.bson.codecs.configuration.mapper.entities.NamedStringChild;
 import org.bson.codecs.configuration.mapper.entities.Nested;
 import org.bson.codecs.configuration.mapper.entities.NestedNested;
@@ -44,6 +47,8 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 @SuppressWarnings("CheckStyle")
 public class ConventionPackTest {
@@ -59,8 +64,37 @@ public class ConventionPackTest {
             .register(Collections.class)
             .register(Nested.class)
             .register(NestedNested.class)
+            .register(Maps.class)
+            .register(MapOfMaps.class)
+            .register(MapOfMapOfMaps.class)
             .build();
         return CodecRegistries.fromProviders(codecProvider, new ValueCodecProvider());
+    }
+
+    @Test
+    public void testCollectionNesting() {
+        final CodecRegistry registry = getCodecRegistry();
+        final Nested nested = new Nested(
+            Arrays.asList(
+                Arrays.<BaseGenericType<?>>asList(new IntChild(1), new IntChild(2)),
+                Arrays.asList(new IntChild(3), new StringChild("Dee"))
+                         ));
+
+
+        roundTrip(registry, nested);
+
+        final NestedNested nestednested = new NestedNested(
+            Arrays.asList(
+                Arrays.asList(
+                    Arrays.<BaseGenericType<?>>asList(new IntChild(1), new IntChild(2)),
+                    Arrays.asList(new IntChild(3), new StringChild("Dee"))
+                             ),
+                Arrays.asList(
+                    Arrays.<BaseGenericType<?>>asList(new IntChild(1), new IntChild(2)),
+                    Arrays.asList(new IntChild(3), new StringChild("Dee"))
+                             )
+                         ));
+        roundTrip(registry, nestednested);
     }
 
     @Test
@@ -211,40 +245,41 @@ public class ConventionPackTest {
     }
 
     @Test
-    public void testNesteds() {
-        final CodecRegistry registry = getCodecRegistry();
-        final Nested nested = new Nested(
-            Arrays.asList(
-                Arrays.<BaseGenericType<?>>asList(new IntChild(1), new IntChild(2)),
-                Arrays.asList(new IntChild(3), new StringChild("Dee"))
-            ));
+    public void testMaps() {
+        final Maps maps = new Maps();
+        final HashMap<String, Integer> map = new HashMap<String, Integer>();
+        for (int i = 0; i < 10; i++) {
+            map.put(i + "", 10 - i);
+        }
+        maps.setMap(map);
 
-
-        roundTrip(registry, nested);
-
-        final NestedNested nestednested = new NestedNested(
-            Arrays.asList(
-                Arrays.asList(
-                    Arrays.<BaseGenericType<?>>asList(new IntChild(1), new IntChild(2)),
-                    Arrays.asList(new IntChild(3), new StringChild("Dee"))
-                ),
-                Arrays.asList(
-                    Arrays.<BaseGenericType<?>>asList(new IntChild(1), new IntChild(2)),
-                    Arrays.asList(new IntChild(3), new StringChild("Dee"))
-                )
-            ));
-        roundTrip(registry, nestednested);
+        roundTrip(getCodecRegistry(), maps);
     }
 
-    public <T>void roundTrip(final CodecRegistry registry, final T object) {
-        final DecoderContext decoderContext = DecoderContext.builder().build();
-        final EncoderContext encoderContext = EncoderContext.builder().build();
+    @Test
+    public void testMapNesting() {
+        final MapOfMaps maps = new MapOfMaps();
+        final HashMap<String, Integer> map1 = new HashMap<String, Integer>();
+        for (int i = 0; i < 10; i++) {
+            map1.put(i + "", 10 - i);
+        }
+        final HashMap<String, Integer> map2 = new HashMap<String, Integer>();
+        for (int i = 0; i < 10; i++) {
+            map2.put(i + "", i);
+        }
+        final HashMap<String, Map<String, Integer>> map = new HashMap<String, Map<String, Integer>>();
+        map.put("map1", map1);
+        map.put("map2", map2);
+        maps.setMap(map);
 
-        final BsonDocument document = new BsonDocument();
-        final Class<T> klass = (Class<T>) object.getClass();
-        registry.get(klass).encode(new BsonDocumentWriter(document), object, encoderContext);
-        final Object decoded = registry.get(klass).decode(new BsonDocumentReader(document), decoderContext);
-        Assert.assertEquals(object, decoded);
+        roundTrip(getCodecRegistry(), maps);
+
+        final Map<String, Map<String, Map<String, Integer>>> bigMap = new HashMap<String, Map<String, Map<String, Integer>>>();
+        bigMap.put("uber", map);
+        final MapOfMapOfMaps uberMap = new MapOfMapOfMaps();
+        uberMap.setMap(bigMap);
+
+        roundTrip(getCodecRegistry(), uberMap);
     }
 
     @Test
@@ -280,5 +315,16 @@ public class ConventionPackTest {
         Assert.assertEquals(document.getString("password").getValue(), "zl ibvpr vf zl cnffcbeg");
 
         Assert.assertEquals(entity, codec.decode(new BsonDocumentReader(document), DecoderContext.builder().build()));
+    }
+
+    private <T> void roundTrip(final CodecRegistry registry, final T object) {
+        final DecoderContext decoderContext = DecoderContext.builder().build();
+        final EncoderContext encoderContext = EncoderContext.builder().build();
+
+        final BsonDocument document = new BsonDocument();
+        final Class<T> klass = (Class<T>) object.getClass();
+        registry.get(klass).encode(new BsonDocumentWriter(document), object, encoderContext);
+        final Object decoded = registry.get(klass).decode(new BsonDocumentReader(document), decoderContext);
+        Assert.assertEquals(object, decoded);
     }
 }
