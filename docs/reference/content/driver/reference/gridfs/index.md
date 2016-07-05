@@ -61,6 +61,7 @@ GridFSUploadOptions options = new GridFSUploadOptions()
                                     .metadata(new Document("type", "presentation"));
 
 ObjectId fileId = gridFSBucket.uploadFromStream("mongodb-tutorial", streamToUploadFrom, options);
+streamToUploadFrom.close();
 ```
 
 ### OpenUploadStream
